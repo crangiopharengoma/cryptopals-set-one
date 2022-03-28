@@ -1,6 +1,8 @@
 use std::fmt::{Display, Formatter};
 use std::str;
 
+use crate::hex::Hex;
+
 pub struct Base64 {
     bytes: Vec<u8>,
 }
@@ -17,12 +19,8 @@ impl Base64 {
         Base64 { bytes }
     }
 
-    pub fn from_hex(hex: &str) -> Base64 {
-        let mut bytes: Vec<u8> = Vec::new();
-        for byte in hex.as_bytes().chunks(2) {
-            bytes.push(Self::parse_two_hex_ascii_bytes_to_u8(byte))
-        }
-
+    pub fn from_hex(hex: Hex) -> Base64 {
+        let bytes = hex.raw_bytes().to_vec();
         Base64 { bytes }
     }
 
@@ -84,25 +82,6 @@ impl Base64 {
         }
     }
 
-    fn parse_two_hex_ascii_bytes_to_u8(byte: &[u8]) -> u8 {
-        let ones = byte[1];
-        let ones = Self::u8_from_hex_ascii_byte(ones);
-
-        if byte.len() == 2 {
-            let sixteens = byte[0];
-            ones + Self::u8_from_hex_ascii_byte(sixteens) * 16
-        } else {
-            ones
-        }
-    }
-
-    fn u8_from_hex_ascii_byte(char_as_u8: u8) -> u8 {
-        if char_as_u8 < 58 {
-            char_as_u8 - 48
-        } else {
-            char_as_u8 - 87
-        }
-    }
 
     fn ascii_char_from_encoded_byte(converted: u8) -> char {
         if converted < 26 {
@@ -123,36 +102,6 @@ impl Base64 {
 #[cfg(test)]
 mod tests {
     use crate::base64::Base64;
-
-    #[test]
-    fn hex_to_base64() {
-        let hex_input = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
-        let base64_expected = "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t";
-
-        let base64_converted = Base64::from_hex(hex_input);
-
-        assert_eq!(base64_expected, base64_converted.to_string());
-    }
-
-    #[test]
-    fn hex_to_bytes() {
-        let hex_input = "49276d";
-        let expected_bytes = [73, 39, 109];
-
-        let converted_bytes = Base64::from_hex(hex_input).bytes;
-
-        assert_eq!(expected_bytes, converted_bytes.as_slice())
-    }
-
-    #[test]
-    fn two_char_hex_str_to_u8() {
-        let hex_input = "49";
-        let u8_expected: u8 = 73;
-
-        let u8_converted = Base64::parse_two_hex_ascii_bytes_to_u8(hex_input.as_bytes());
-
-        assert_eq!(u8_expected, u8_converted);
-    }
 
     #[test]
     fn base_64_from_bytes() {
