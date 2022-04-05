@@ -1,5 +1,4 @@
 use std::fmt::{Display, Formatter};
-use std::str;
 
 use crate::hex::Hex;
 
@@ -57,7 +56,6 @@ impl Base64 {
         for chunk in bytes.chunks(3) {
             let encoded_bytes = Self::encode_bytes(chunk);
             Self::string_from_encoded_bytes(&mut result, chunk.len(), encoded_bytes);
-            println!("interim result {:?}", result);
         }
 
         result
