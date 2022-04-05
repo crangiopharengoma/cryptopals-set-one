@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use crate::Error;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Hex {
     bytes: Vec<u8>,
 }
@@ -26,6 +27,14 @@ impl Hex {
 
     pub fn raw_bytes(&self) -> &[u8] {
         &self.bytes
+    }
+
+    pub fn xor(&self, other: &Hex) -> Hex {
+        let bytes = self.raw_bytes().iter()
+            .zip(other.raw_bytes().iter())
+            .map(|(x, y)| x ^ y)
+            .collect();
+        Hex { bytes }
     }
 
     fn parse_two_hex_ascii_bytes_to_u8(byte: &[u8]) -> u8 {
@@ -54,6 +63,18 @@ mod test {
     use std::str::FromStr;
 
     use crate::hex::Hex;
+
+    #[test]
+    fn xor_two_hex_values() {
+        let hex_one = Hex::from_str("52f0f0").unwrap();
+        let hex_two = Hex::from_str("cdff00").unwrap();
+
+        let expected_hex = Hex::from_str("9f0ff0").unwrap();
+
+        let xor_hex = hex_one.xor(&hex_two);
+
+        assert_eq!(expected_hex, xor_hex);
+    }
 
     #[test]
     fn hex_to_bytes() {
