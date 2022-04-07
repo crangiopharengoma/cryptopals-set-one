@@ -1,5 +1,5 @@
 [package]
-name = "set_one"
+name = "cryptopals"
 version = "0.1.0"
 edition = "2021"
 
