@@ -1,5 +1,6 @@
 pub mod base64;
 pub mod hex;
+pub mod string_heuristics;
 
 pub type Error = Box<dyn std::error::Error>;
 
