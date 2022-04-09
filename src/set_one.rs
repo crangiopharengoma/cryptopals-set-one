@@ -1,9 +1,10 @@
 use std::fs;
 use std::str::FromStr;
 
-use cryptopals::{caesar_cypher, string_heuristics};
 use cryptopals::base64::Base64;
+use cryptopals::cyphers::{caesar_cypher, repeating_key_xor};
 use cryptopals::hex::Hex;
+use cryptopals::string_heuristics;
 
 pub fn set_one() {
     print!("challenge one beginning... ");
@@ -21,6 +22,9 @@ pub fn set_one() {
     print!("Challenge four beginning... ");
     challenge_four();
     println!("Success!");
+
+    print!("Challenge five beginning... ");
+    challenge_five();
 }
 
 fn challenge_one() {
@@ -78,3 +82,5 @@ fn challenge_four() {
 
     println!("The message is: {}", String::from_utf8_lossy(&decrypted_message));
 }
+
+fn challenge_five() {}

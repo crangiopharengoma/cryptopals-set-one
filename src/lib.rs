@@ -1,7 +1,7 @@
 pub mod base64;
 pub mod hex;
 pub mod string_heuristics;
-pub mod caesar_cypher;
+pub mod cyphers;
 
 pub type Error = Box<dyn std::error::Error>;
 
