@@ -1,3 +1,4 @@
+use std::fs;
 use std::str::FromStr;
 
 use cryptopals::{caesar_cypher, string_heuristics};
@@ -5,14 +6,21 @@ use cryptopals::base64::Base64;
 use cryptopals::hex::Hex;
 
 pub fn set_one() {
+    print!("challenge one beginning... ");
     challenge_one();
-    println!("challenge one success");
+    println!("Success!");
 
+    print!("Challenge two beginning... ");
     challenge_two();
-    println!("challenge two success");
+    println!("Success!");
 
+    print!("Challenge three beginning... ");
     challenge_three();
-    println!("challenge three success");
+    println!("Success!");
+
+    print!("Challenge four beginning... ");
+    challenge_four();
+    println!("Success!");
 }
 
 fn challenge_one() {
@@ -39,8 +47,34 @@ fn challenge_three() {
     let key = caesar_cypher::find_key(hex.raw_bytes());
     if let Some(key) = key {
         let decoded = caesar_cypher::decrypt(hex.raw_bytes(), key);
-        println!("Challenge 3 solution: The message is: {}", String::from_utf8_lossy(&decoded));
+        println!("The message is: {}", String::from_utf8_lossy(&decoded));
     } else {
         println!("No key found; message not encrypted by single-character xor")
     }
+}
+
+fn challenge_four() {
+    let possible_messages = fs::read_to_string("4.txt").expect("file read failed");
+
+    let mut highest_score = 0;
+    let mut decrypted_message = Vec::new();
+    for line in possible_messages.lines() {
+        let hex = Hex::from_str(line);
+        // may be Err if invalid hex, in which case we should just continue since
+        // it's not valid data (in the scope of challenge 4)
+        if let Ok(hex) = hex {
+            let key = caesar_cypher::find_key(hex.raw_bytes());
+            // may be None if line is empty, in which case we can just continue
+            if let Some(key) = key {
+                let decrypted = caesar_cypher::decrypt(hex.raw_bytes(), key);
+                let score = string_heuristics::score_suspected_string(&decrypted);
+                if score > highest_score {
+                    highest_score = score;
+                    decrypted_message = decrypted;
+                }
+            }
+        }
+    }
+
+    println!("The message is: {}", String::from_utf8_lossy(&decrypted_message));
 }
