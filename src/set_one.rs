@@ -1,9 +1,8 @@
-use std::fs;
 use std::str::FromStr;
 
+use cryptopals::{caesar_cypher, string_heuristics};
 use cryptopals::base64::Base64;
 use cryptopals::hex::Hex;
-use cryptopals::string_heuristics;
 
 pub fn set_one() {
     challenge_one();
@@ -36,26 +35,12 @@ fn challenge_two() {
 
 fn challenge_three() {
     let hex = Hex::from_str("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736").unwrap();
-    let decrypted = brute_force(hex);
-    if let Some(decrypted) = decrypted {
-        let decoded = String::from_utf8_lossy(decrypted.raw_bytes());
-        println!("Challenge 3 solution: The message is: {decoded}");
-    } else {
-        println!("No matches found")
-    }
-}
 
-fn brute_force(hex: Hex) -> Option<Hex> {
-    let mut score = 0;
-    let mut decrypted_result = None;
-    for i in 0..u8::MAX {
-        let key = Hex::new(&[i; 34]);
-        let decrypted = hex.clone() ^ key;
-        let decrypted_score = string_heuristics::score_suspected_string(decrypted.raw_bytes());
-        if decrypted_score > score {
-            decrypted_result = Some(decrypted);
-            score = decrypted_score;
-        }
+    let key = caesar_cypher::find_key(hex.raw_bytes());
+    if let Some(key) = key {
+        let decoded = caesar_cypher::decrypt(hex.raw_bytes(), key);
+        println!("Challenge 3 solution: The message is: {}", String::from_utf8_lossy(&decoded));
+    } else {
+        println!("No key found; message not encrypted by single-character xor")
     }
-    decrypted_result
 }
