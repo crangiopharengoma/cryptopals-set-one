@@ -1,3 +1,4 @@
+use std::ops::BitXor;
 use std::str::FromStr;
 
 use crate::Error;
@@ -19,6 +20,18 @@ impl FromStr for Hex {
     }
 }
 
+impl BitXor for Hex {
+    type Output = Hex;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        let bytes = self.raw_bytes().iter()
+            .zip(rhs.raw_bytes().iter())
+            .map(|(x, y)| x ^ y)
+            .collect();
+        Hex { bytes }
+    }
+}
+
 impl Hex {
     pub fn new(bytes: &[u8]) -> Hex {
         let bytes = bytes.to_vec();
@@ -27,14 +40,6 @@ impl Hex {
 
     pub fn raw_bytes(&self) -> &[u8] {
         &self.bytes
-    }
-
-    pub fn xor(&self, other: &Hex) -> Hex {
-        let bytes = self.raw_bytes().iter()
-            .zip(other.raw_bytes().iter())
-            .map(|(x, y)| x ^ y)
-            .collect();
-        Hex { bytes }
     }
 
     fn parse_two_hex_ascii_bytes_to_u8(byte: &[u8]) -> u8 {
@@ -71,7 +76,7 @@ mod test {
 
         let expected_hex = Hex::from_str("9f0ff0").unwrap();
 
-        let xor_hex = hex_one.xor(&hex_two);
+        let xor_hex = hex_one ^ hex_two;
 
         assert_eq!(expected_hex, xor_hex);
     }
