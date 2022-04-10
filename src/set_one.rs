@@ -25,6 +25,8 @@ pub fn set_one() {
 
     print!("Challenge five beginning... ");
     challenge_five();
+    println!("Success!");
+    
 }
 
 fn challenge_one() {
@@ -83,4 +85,13 @@ fn challenge_four() {
     println!("The message is: {}", String::from_utf8_lossy(&decrypted_message));
 }
 
-fn challenge_five() {}
+fn challenge_five() {
+    // it looks like the supplied encryption was down with unix line endings, so altered string to enforce that here
+    let plain_text = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal".as_bytes();
+    let key = "ICE".as_bytes();
+    let expected_encrypted = Hex::from_str("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f").unwrap();
+
+    let encrypted = repeating_key_xor::encrypt(plain_text, key);
+
+    assert_eq!(expected_encrypted.raw_bytes(), encrypted);
+}
