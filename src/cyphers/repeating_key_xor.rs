@@ -2,11 +2,7 @@ pub fn encrypt(message: &[u8], key: &[u8]) -> Vec<u8> {
     // this will actually make the key 3x longer than the message, but the zip will handle that
     key.repeat(message.len()).iter()
         .zip(message.iter())
-        .map(|(x, y)| {
-            println!("encrypting y: {} with x: {}", *y as char, *x as char);
-            println!("outcome: {}", x ^ y);
-            x ^ y
-        })
+        .map(|(x, y)| x ^ y)
         .collect()
 }
 
