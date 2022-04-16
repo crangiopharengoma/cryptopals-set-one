@@ -1,9 +1,9 @@
 use std::fs;
 use std::str::FromStr;
 
-use cryptopals::base64::Base64;
 use cryptopals::cyphers::{caesar_cypher, vigenere};
-use cryptopals::hex::Hex;
+use cryptopals::encoding::base64::Base64;
+use cryptopals::encoding::hex::Hex;
 use cryptopals::string_heuristics;
 
 pub fn set_one() {

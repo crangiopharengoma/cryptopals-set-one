@@ -1,8 +1,8 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
+use crate::encoding::hex::Hex;
 use crate::Error;
-use crate::hex::Hex;
 
 pub struct Base64 {
     bytes: Vec<u8>,
@@ -154,7 +154,7 @@ impl Base64 {
 mod tests {
     use std::str::FromStr;
 
-    use crate::base64::Base64;
+    use crate::encoding::base64::Base64;
 
     #[test]
     fn base_64_from_bytes() {

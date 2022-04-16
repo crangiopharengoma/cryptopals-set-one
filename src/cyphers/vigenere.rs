@@ -55,7 +55,7 @@ mod test {
 
     use crate::cyphers::vigenere;
     use crate::cyphers::vigenere::{decrypt, encrypt};
-    use crate::hex::Hex;
+    use crate::encoding::hex::Hex;
 
     #[test]
     fn string_is_encrypted() {

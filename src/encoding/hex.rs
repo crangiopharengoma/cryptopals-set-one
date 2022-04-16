@@ -67,7 +67,7 @@ impl Hex {
 mod test {
     use std::str::FromStr;
 
-    use crate::hex::Hex;
+    use crate::encoding::hex::Hex;
 
     #[test]
     fn xor_two_hex_values() {

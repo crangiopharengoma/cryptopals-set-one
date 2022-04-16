@@ -2,10 +2,9 @@ extern crate core;
 
 use std::cmp::Ordering;
 
-pub mod base64;
-pub mod hex;
 pub mod string_heuristics;
 pub mod cyphers;
+pub mod encoding;
 
 pub type Error = Box<dyn std::error::Error>;
 
@@ -14,15 +13,11 @@ pub struct OrderedFloat(f64);
 
 impl Eq for OrderedFloat {}
 
+// wrapper for f64 that will guarantee is always a number
+#[allow(clippy::derive_ord_xor_partial_ord)]
 impl Ord for OrderedFloat {
     fn cmp(&self, other: &Self) -> Ordering {
-        if self == other {
-            Ordering::Equal
-        } else if self > other {
-            Ordering::Greater
-        } else {
-            Ordering::Less
-        }
+        self.0.partial_cmp(&other.0).expect("ordered float is always a number")
     }
 }
 
@@ -30,8 +25,8 @@ impl Ord for OrderedFloat {
 mod tests {
     use std::str::FromStr;
 
-    use crate::base64::Base64;
-    use crate::hex::Hex;
+    use crate::encoding::base64::Base64;
+    use crate::encoding::hex::Hex;
 
     #[test]
     fn hex_to_base64() {
