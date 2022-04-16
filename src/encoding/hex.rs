@@ -1,11 +1,18 @@
 use std::ops::BitXor;
 use std::str::FromStr;
 
+use crate::encoding::Digest;
 use crate::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Hex {
     bytes: Vec<u8>,
+}
+
+impl Digest for Hex {
+    fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
 }
 
 impl FromStr for Hex {
@@ -24,8 +31,8 @@ impl BitXor for Hex {
     type Output = Hex;
 
     fn bitxor(self, rhs: Self) -> Self::Output {
-        let bytes = self.raw_bytes().iter()
-            .zip(rhs.raw_bytes().iter())
+        let bytes = self.bytes().iter()
+            .zip(rhs.bytes().iter())
             .map(|(x, y)| x ^ y)
             .collect();
         Hex { bytes }
@@ -38,19 +45,13 @@ impl Hex {
         Hex { bytes }
     }
 
-    pub fn raw_bytes(&self) -> &[u8] {
-        &self.bytes
-    }
-
     fn parse_two_hex_ascii_bytes_to_u8(byte: &[u8]) -> u8 {
-        let ones = byte[1];
-        let ones = Self::u8_from_hex_ascii_byte(ones);
+        let bottom_four_bits = Self::u8_from_hex_ascii_byte(byte[1]);
 
         if byte.len() == 2 {
-            let sixteens = byte[0];
-            ones + Self::u8_from_hex_ascii_byte(sixteens) * 16
+            bottom_four_bits + (Self::u8_from_hex_ascii_byte(byte[0]) << 4)
         } else {
-            ones
+            bottom_four_bits
         }
     }
 

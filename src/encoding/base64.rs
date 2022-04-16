@@ -1,11 +1,18 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
+use crate::encoding::Digest;
 use crate::encoding::hex::Hex;
 use crate::Error;
 
 pub struct Base64 {
     bytes: Vec<u8>,
+}
+
+impl Digest for Base64 {
+    fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
 }
 
 impl Display for Base64 {
@@ -28,9 +35,9 @@ impl FromStr for Base64 {
 }
 
 impl Base64 {
-    pub fn raw_bytes(&self) -> &[u8] {
-        &self.bytes
-    }
+    // pub fn raw_bytes(&self) -> &[u8] {
+    //     &self.bytes
+    // }
 
     pub fn new(bytes: &[u8]) -> Base64 {
         let bytes = bytes.to_vec();
@@ -38,7 +45,7 @@ impl Base64 {
     }
 
     pub fn from_hex(hex: Hex) -> Base64 {
-        let bytes = hex.raw_bytes().to_vec();
+        let bytes = hex.bytes().to_vec();
         Base64 { bytes }
     }
 
@@ -155,6 +162,7 @@ mod tests {
     use std::str::FromStr;
 
     use crate::encoding::base64::Base64;
+    use crate::encoding::Digest;
 
     #[test]
     fn base_64_from_bytes() {
@@ -173,6 +181,6 @@ mod tests {
 
         let calculated_base64 = Base64::from_str(string_input).unwrap();
 
-        assert_eq!(expected_bytes, calculated_base64.raw_bytes())
+        assert_eq!(expected_bytes, calculated_base64.bytes())
     }
 }

@@ -3,8 +3,8 @@ use std::str::FromStr;
 
 use cryptopals::cyphers::{caesar_cypher, vigenere};
 use cryptopals::encoding::base64::Base64;
+use cryptopals::encoding::Digest;
 use cryptopals::encoding::hex::Hex;
-use cryptopals::string_heuristics;
 
 pub fn set_one() {
     print!("challenge one beginning... ");
@@ -53,9 +53,9 @@ fn challenge_two() {
 fn challenge_three() {
     let hex = Hex::from_str("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736").unwrap();
 
-    let key = caesar_cypher::find_key(hex.raw_bytes());
+    let key = caesar_cypher::find_key(&hex);
     if let Some(key) = key {
-        let decoded = caesar_cypher::decrypt(hex.raw_bytes(), key);
+        let decoded = caesar_cypher::decrypt(&hex, key);
         println!("The message is: {}", String::from_utf8_lossy(&decoded));
     } else {
         println!("No key found; message not encrypted by single-character xor")
@@ -72,11 +72,11 @@ fn challenge_four() {
         // may be Err if invalid hex, in which case we should just continue since
         // it's not valid data (in the scope of challenge 4)
         if let Ok(hex) = hex {
-            let key = caesar_cypher::find_key(hex.raw_bytes());
+            let key = caesar_cypher::find_key(&hex);
             // may be None if line is empty, in which case we can just continue
             if let Some(key) = key {
-                let decrypted = caesar_cypher::decrypt(hex.raw_bytes(), key);
-                let score = string_heuristics::score_suspected_string(&decrypted);
+                let decrypted = caesar_cypher::decrypt(&hex, key);
+                let score = decrypted.english_score();
                 if score > highest_score {
                     highest_score = score;
                     decrypted_message = decrypted;
@@ -90,13 +90,13 @@ fn challenge_four() {
 
 fn challenge_five() {
     // it looks like the supplied encryption was down with unix line endings, so altered string to enforce that here
-    let plain_text = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal".as_bytes();
+    let plain_text = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal".as_bytes().to_vec();
     let key = "ICE".as_bytes();
     let expected_encrypted = Hex::from_str("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f").unwrap();
 
-    let encrypted = vigenere::encrypt(plain_text, key);
+    let encrypted = vigenere::encrypt(&plain_text, key);
 
-    assert_eq!(expected_encrypted.raw_bytes(), encrypted);
+    assert_eq!(expected_encrypted.bytes(), encrypted);
 }
 
 fn challenge_six() {
@@ -108,7 +108,7 @@ fn challenge_six() {
         .join("");
 
     let encrypted_message = Base64::from_str(&base64_string).expect("invalid base64");
-    let decrypted_message = vigenere::break_encryption(encrypted_message.raw_bytes());
+    let decrypted_message = vigenere::break_encryption(&encrypted_message);
 
     println!("The message is: {}", String::from_utf8_lossy(&decrypted_message));
 }
