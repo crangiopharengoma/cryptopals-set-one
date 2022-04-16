@@ -1,5 +1,7 @@
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
+use crate::Error;
 use crate::hex::Hex;
 
 pub struct Base64 {
@@ -12,7 +14,24 @@ impl Display for Base64 {
     }
 }
 
+impl FromStr for Base64 {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let bytes = s.as_bytes()
+            .chunks(4)
+            .flat_map(Self::encoded_bytes_from_chunk)
+            .collect();
+
+        Ok(Base64 { bytes })
+    }
+}
+
 impl Base64 {
+    pub fn raw_bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
     pub fn new(bytes: &[u8]) -> Base64 {
         let bytes = bytes.to_vec();
         Base64 { bytes }
@@ -41,11 +60,11 @@ impl Base64 {
 
         let value: u32 = u32::from_be_bytes(chunk_array);
 
-        let low_six_bytes_mask = 0b11_1111;
-        let first_val = (value & low_six_bytes_mask) as u8;
-        let second_val = (value >> 6 & low_six_bytes_mask) as u8;
-        let third_val = (value >> 12 & low_six_bytes_mask) as u8;
-        let fourth_val = (value >> 18 & low_six_bytes_mask) as u8;
+        let low_six_bits_mask = 0b11_1111;
+        let first_val = (value & low_six_bits_mask) as u8;
+        let second_val = (value >> 6 & low_six_bits_mask) as u8;
+        let third_val = (value >> 12 & low_six_bits_mask) as u8;
+        let fourth_val = (value >> 18 & low_six_bits_mask) as u8;
 
         [fourth_val, third_val, second_val, first_val]
     }
@@ -80,7 +99,6 @@ impl Base64 {
         }
     }
 
-
     fn ascii_char_from_encoded_byte(converted: u8) -> char {
         if converted < 26 {
             (converted + 65) as char
@@ -88,17 +106,54 @@ impl Base64 {
             (converted + 71) as char
         } else if converted < 62 {
             (converted - 4) as char
-        } else if converted == 63 {
+        } else if converted == 62 {
             '+'
         } else {
             '/'
         }
     }
-}
 
+    fn encoded_bytes_from_chunk(chunk: &[u8]) -> Vec<u8> {
+        if chunk.len() != 4 {
+            panic!("invalid chunk length");
+        }
+
+        let chunk_value = chunk.iter()
+            .fold(0, |accum, chunk| {
+                (accum << 6) + (Self::decimal_value_from_ascii_byte(*chunk) as u32)
+            });
+
+        let last_byte_mask = 0b1111_1111;
+
+        vec!(
+            (chunk_value >> 16 & last_byte_mask) as u8,
+            (chunk_value >> 8 & last_byte_mask) as u8,
+            (chunk_value & last_byte_mask) as u8
+        )
+    }
+
+    fn decimal_value_from_ascii_byte(ascii_byte: u8) -> u8 {
+        let ascii_char = ascii_byte as char;
+        if ascii_char == '+' {
+            62
+        } else if ascii_char == '/' {
+            63
+        } else if ascii_char == '=' {
+            0
+        } else if ascii_byte < 58 {
+            ascii_byte + 4
+        } else if ascii_byte < 91 {
+            ascii_byte - 65
+        } else {
+            ascii_byte - 71
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use crate::base64::Base64;
 
     #[test]
@@ -109,5 +164,15 @@ mod tests {
         let base64_converted = Base64::encode(&bytes_input);
 
         assert_eq!(base64_expected, base64_converted);
+    }
+
+    #[test]
+    fn base_64_from_string() {
+        let string_input = "SSdtIGtp";
+        let expected_bytes = [73, 39, 109, 32, 107, 105];
+
+        let calculated_base64 = Base64::from_str(string_input).unwrap();
+
+        assert_eq!(expected_bytes, calculated_base64.raw_bytes())
     }
 }

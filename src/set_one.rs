@@ -2,7 +2,7 @@ use std::fs;
 use std::str::FromStr;
 
 use cryptopals::base64::Base64;
-use cryptopals::cyphers::{caesar_cypher, repeating_key_xor};
+use cryptopals::cyphers::{caesar_cypher, vigenere};
 use cryptopals::hex::Hex;
 use cryptopals::string_heuristics;
 
@@ -26,7 +26,10 @@ pub fn set_one() {
     print!("Challenge five beginning... ");
     challenge_five();
     println!("Success!");
-    
+
+    print!("Challenge six beginning... ");
+    challenge_six();
+    println!("Success!");
 }
 
 fn challenge_one() {
@@ -91,7 +94,21 @@ fn challenge_five() {
     let key = "ICE".as_bytes();
     let expected_encrypted = Hex::from_str("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f").unwrap();
 
-    let encrypted = repeating_key_xor::encrypt(plain_text, key);
+    let encrypted = vigenere::encrypt(plain_text, key);
 
     assert_eq!(expected_encrypted.raw_bytes(), encrypted);
+}
+
+fn challenge_six() {
+    let file_contents = fs::read_to_string("6.txt").expect("failed to read file");
+
+    let base64_string = file_contents
+        .lines()
+        .collect::<Vec<&str>>()
+        .join("");
+
+    let encrypted_message = Base64::from_str(&base64_string).expect("invalid base64");
+    let decrypted_message = vigenere::break_encryption(encrypted_message.raw_bytes());
+
+    println!("The message is: {}", String::from_utf8_lossy(&decrypted_message));
 }

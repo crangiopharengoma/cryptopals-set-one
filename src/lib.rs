@@ -1,9 +1,30 @@
+extern crate core;
+
+use std::cmp::Ordering;
+
 pub mod base64;
 pub mod hex;
 pub mod string_heuristics;
 pub mod cyphers;
 
 pub type Error = Box<dyn std::error::Error>;
+
+#[derive(PartialOrd, PartialEq, Debug)]
+pub struct OrderedFloat(f64);
+
+impl Eq for OrderedFloat {}
+
+impl Ord for OrderedFloat {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self == other {
+            Ordering::Equal
+        } else if self > other {
+            Ordering::Greater
+        } else {
+            Ordering::Less
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
