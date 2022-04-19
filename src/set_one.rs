@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::str::FromStr;
 
@@ -6,8 +7,8 @@ use openssl::symm::Cipher;
 
 use cryptopals::cyphers::{caesar_cypher, vigenere};
 use cryptopals::encoding::base64::Base64;
-use cryptopals::encoding::Digest;
 use cryptopals::encoding::hex::Hex;
+use cryptopals::encoding::Digest;
 
 pub fn set_one() {
     print!("Challenge one beginning... ");
@@ -36,6 +37,10 @@ pub fn set_one() {
 
     print!("Challenge seven beginning... ");
     challenge_seven();
+    println!("Success!");
+
+    print!("Challenge eight beginning... ");
+    challenge_eight();
 }
 
 fn challenge_one() {
@@ -57,7 +62,8 @@ fn challenge_two() {
 }
 
 fn challenge_three() {
-    let hex = Hex::from_str("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736").unwrap();
+    let hex = Hex::from_str("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
+        .unwrap();
 
     let key = caesar_cypher::find_key(&hex);
     if let Some(key) = key {
@@ -91,12 +97,17 @@ fn challenge_four() {
         }
     }
 
-    println!("The message is: {}", String::from_utf8_lossy(&decrypted_message));
+    println!(
+        "The message is: {}",
+        String::from_utf8_lossy(&decrypted_message)
+    );
 }
 
 fn challenge_five() {
     // it looks like the supplied encryption was down with unix line endings, so altered string to enforce that here
-    let plain_text = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal".as_bytes().to_vec();
+    let plain_text = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"
+        .as_bytes()
+        .to_vec();
     let key = "ICE".as_bytes();
     let expected_encrypted = Hex::from_str("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f").unwrap();
 
@@ -109,7 +120,10 @@ fn challenge_six() {
     let encrypted_message = Base64::from_file("6.txt").expect("failed to read file");
     let decrypted_message = vigenere::break_encryption(&encrypted_message);
 
-    println!("The message is: {}", String::from_utf8_lossy(&decrypted_message));
+    println!(
+        "The message is: {}",
+        String::from_utf8_lossy(&decrypted_message)
+    );
 }
 
 fn challenge_seven() {
@@ -117,12 +131,35 @@ fn challenge_seven() {
     let key = "YELLOW SUBMARINE".as_bytes();
     let cipher = Cipher::aes_128_ecb();
 
-    let decrypted_message = symm::decrypt(
-        cipher,
-        key,
-        None,
-        encrypted_message.bytes(),
-    ).expect("decryption failed");
+    let decrypted_message =
+        symm::decrypt(cipher, key, None, encrypted_message.bytes()).expect("decryption failed");
 
-    println!("The message is: {}", String::from_utf8_lossy(&decrypted_message));
+    println!(
+        "The message is: {}",
+        String::from_utf8_lossy(&decrypted_message)
+    );
+}
+
+/// https://cryptopals.com/sets/1/challenges/8
+fn challenge_eight() {
+    let hex_strings = fs::read_to_string("8.txt").expect("failed to read file");
+    let hexes: Vec<Hex> = hex_strings
+        .lines()
+        .map(|line| Hex::from_str(line).unwrap())
+        .collect();
+
+    let ecb_encrypted = hexes
+        .iter()
+        .max_by_key(|hex| {
+            let mut map: HashMap<&[u8], usize> = HashMap::new();
+            hex.bytes().chunks(16).for_each(|chunk| {
+                map.entry(chunk).and_modify(|e| *e += 1).or_insert(1);
+            });
+            *map.values()
+                .reduce(|accum, val| if val > accum { val } else { accum })
+                .unwrap()
+        })
+        .unwrap();
+
+    println!("ECB encrypted hex is: {:?}", ecb_encrypted);
 }
