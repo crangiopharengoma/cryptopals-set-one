@@ -1,13 +1,16 @@
 use std::fs;
 use std::str::FromStr;
 
+use openssl::symm;
+use openssl::symm::Cipher;
+
 use cryptopals::cyphers::{caesar_cypher, vigenere};
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
 use cryptopals::encoding::hex::Hex;
 
 pub fn set_one() {
-    print!("challenge one beginning... ");
+    print!("Challenge one beginning... ");
     challenge_one();
     println!("Success!");
 
@@ -30,6 +33,9 @@ pub fn set_one() {
     print!("Challenge six beginning... ");
     challenge_six();
     println!("Success!");
+
+    print!("Challenge seven beginning... ");
+    challenge_seven();
 }
 
 fn challenge_one() {
@@ -100,15 +106,23 @@ fn challenge_five() {
 }
 
 fn challenge_six() {
-    let file_contents = fs::read_to_string("6.txt").expect("failed to read file");
-
-    let base64_string = file_contents
-        .lines()
-        .collect::<Vec<&str>>()
-        .join("");
-
-    let encrypted_message = Base64::from_str(&base64_string).expect("invalid base64");
+    let encrypted_message = Base64::from_file("6.txt").expect("failed to read file");
     let decrypted_message = vigenere::break_encryption(&encrypted_message);
+
+    println!("The message is: {}", String::from_utf8_lossy(&decrypted_message));
+}
+
+fn challenge_seven() {
+    let encrypted_message = Base64::from_file("7.txt").expect("failed to read file");
+    let key = "YELLOW SUBMARINE".as_bytes();
+    let cipher = Cipher::aes_128_ecb();
+
+    let decrypted_message = symm::decrypt(
+        cipher,
+        key,
+        None,
+        encrypted_message.bytes(),
+    ).expect("decryption failed");
 
     println!("The message is: {}", String::from_utf8_lossy(&decrypted_message));
 }

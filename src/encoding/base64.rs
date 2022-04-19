@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::fs;
 use std::str::FromStr;
 
 use crate::encoding::Digest;
@@ -47,6 +48,26 @@ impl Base64 {
     pub fn from_hex(hex: Hex) -> Base64 {
         let bytes = hex.bytes().to_vec();
         Base64 { bytes }
+    }
+
+    /// Tries to create a Base64 from a file
+    ///
+    /// Assumptions:
+    /// The file contains only the base64 encoded chars and linebreaks
+    /// Linebreaks are ignored - the entire file is a read as a single encoded value
+    ///
+    /// Errors
+    /// If file can't be opened/read
+    /// If file contains invalid base64 chars
+    pub fn from_file(path: &str) -> Result<Base64, Error> {
+        let file_contents = fs::read_to_string(path)?;
+
+        let base64_string = file_contents
+            .lines()
+            .collect::<Vec<&str>>()
+            .join("");
+
+        Base64::from_str(&base64_string)
     }
 
     /// Takes a slice of raw bytes and converts into base64 encoded bytes
