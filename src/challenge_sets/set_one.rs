@@ -10,7 +10,7 @@ use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::hex::Hex;
 use cryptopals::encoding::Digest;
 
-pub fn set_one() {
+pub fn run() {
     print!("Challenge one beginning... ");
     challenge_one();
     println!("Success!");
