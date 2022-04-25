@@ -5,7 +5,7 @@ pub mod base64;
 
 impl Digest for Vec<u8> {
     fn bytes(&self) -> &[u8] {
-        &self
+        self
     }
 }
 
