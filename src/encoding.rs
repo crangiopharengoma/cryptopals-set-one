@@ -1,9 +1,15 @@
 use crate::OrderedFloat;
 
-pub mod hex;
 pub mod base64;
+pub mod hex;
 
 impl Digest for Vec<u8> {
+    fn bytes(&self) -> &[u8] {
+        self
+    }
+}
+
+impl Digest for &Vec<u8> {
     fn bytes(&self) -> &[u8] {
         self
     }
@@ -28,7 +34,9 @@ pub trait Digest {
 
     /// Scores how likely this Digest is to some valid English text
     fn english_score(&self) -> usize {
-        self.bytes().iter().fold(0, |score, x| score + score_char(*x))
+        self.bytes()
+            .iter()
+            .fold(0, |score, x| score + score_char(*x))
     }
 
     /// Returns the Hamming distance or edit distance between two Digests
@@ -36,7 +44,7 @@ pub trait Digest {
     /// This method takes two Digests and assumes that they are valid strings of equal length.
     /// If either invariant is not met this will still return a usize.
     /// This will effectively be the same as truncating the longer string to the length of the shorter
-    fn hamming_distance(&self, other: &dyn Digest) -> usize {
+    fn hamming_distance<T: Digest>(&self, other: T) -> usize {
         hamming_distance(self.bytes(), other.bytes())
     }
 
@@ -50,19 +58,22 @@ pub trait Digest {
     fn normalized_edit_distance(&self, keysize: &usize) -> OrderedFloat {
         let chunks: Vec<&[u8]> = self.bytes().chunks(*keysize).collect();
 
-        OrderedFloat(vec!(
-            hamming_distance(chunks[0], chunks[1]),
-            hamming_distance(chunks[1], chunks[2]),
-            hamming_distance(chunks[2], chunks[3]),
-            hamming_distance(chunks[0], chunks[2]),
-            hamming_distance(chunks[0], chunks[3]),
-            hamming_distance(chunks[1], chunks[3]))
+        OrderedFloat(
+            vec![
+                hamming_distance(chunks[0], chunks[1]),
+                hamming_distance(chunks[1], chunks[2]),
+                hamming_distance(chunks[2], chunks[3]),
+                hamming_distance(chunks[0], chunks[2]),
+                hamming_distance(chunks[0], chunks[3]),
+                hamming_distance(chunks[1], chunks[3]),
+            ]
             .iter()
             .map(|dist| *dist as f64 / *keysize as f64)
-            .sum::<f64>() / 6.0)
+            .sum::<f64>()
+                / 6.0,
+        )
     }
 }
-
 
 /// Returns the Hamming distance or edit distance between two strings
 ///
@@ -70,7 +81,8 @@ pub trait Digest {
 /// If either invariant is not met this will still return a usize.
 /// This will effectively be the same as truncating the longer string to the length of the shorter
 fn hamming_distance(string_one: &[u8], string_two: &[u8]) -> usize {
-    string_one.iter()
+    string_one
+        .iter()
         .zip(string_two.iter())
         .map(|(x, y)| x ^ y)
         .fold(0, |accum, byte| accum + byte.count_ones() as usize)
@@ -94,17 +106,19 @@ fn score_char(byte: u8) -> usize {
         'J' | 'X' => 2,
         'q' | 'z' => 1,
         // Q and Z omitted
-        _ => 0
+        _ => 0,
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::encoding::{Digest, hamming_distance};
+    use crate::encoding::{hamming_distance, Digest};
 
     #[test]
     fn phrase_is_scored_correctly() {
-        let phrase: Vec<u8> = "The quick brown fox jumps over the lazy dog. Oh yeah!".as_bytes().to_vec();
+        let phrase: Vec<u8> = "The quick brown fox jumps over the lazy dog. Oh yeah!"
+            .as_bytes()
+            .to_vec();
         let expected_score = 339;
 
         let calculated_score = phrase.english_score();
@@ -123,4 +137,3 @@ mod test {
         assert_eq!(expected_distance, calculated_distance);
     }
 }
-

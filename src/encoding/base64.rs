@@ -2,8 +2,8 @@ use std::fmt::{Display, Formatter};
 use std::fs;
 use std::str::FromStr;
 
-use crate::encoding::Digest;
 use crate::encoding::hex::Hex;
+use crate::encoding::Digest;
 use crate::Error;
 
 pub struct Base64 {
@@ -11,6 +11,12 @@ pub struct Base64 {
 }
 
 impl Digest for Base64 {
+    fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
+impl Digest for &Base64 {
     fn bytes(&self) -> &[u8] {
         &self.bytes
     }
@@ -26,7 +32,8 @@ impl FromStr for Base64 {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let bytes = s.as_bytes()
+        let bytes = s
+            .as_bytes()
             .chunks(4)
             .flat_map(Self::encoded_bytes_from_chunk)
             .collect();
@@ -62,10 +69,7 @@ impl Base64 {
     pub fn from_file(path: &str) -> Result<Base64, Error> {
         let file_contents = fs::read_to_string(path)?;
 
-        let base64_string = file_contents
-            .lines()
-            .collect::<Vec<&str>>()
-            .join("");
+        let base64_string = file_contents.lines().collect::<Vec<&str>>().join("");
 
         Base64::from_str(&base64_string)
     }
@@ -108,7 +112,11 @@ impl Base64 {
         result
     }
 
-    fn string_from_encoded_bytes(result: &mut String, raw_byte_length: usize, encoded_bytes: [u8; 4]) {
+    fn string_from_encoded_bytes(
+        result: &mut String,
+        raw_byte_length: usize,
+        encoded_bytes: [u8; 4],
+    ) {
         if raw_byte_length == 3 {
             result.push(Self::ascii_char_from_encoded_byte(encoded_bytes[0]));
             result.push(Self::ascii_char_from_encoded_byte(encoded_bytes[1]));
@@ -146,18 +154,17 @@ impl Base64 {
             panic!("invalid chunk length");
         }
 
-        let chunk_value = chunk.iter()
-            .fold(0, |accum, chunk| {
-                (accum << 6) + (Self::decimal_value_from_ascii_byte(*chunk) as u32)
-            });
+        let chunk_value = chunk.iter().fold(0, |accum, chunk| {
+            (accum << 6) + (Self::decimal_value_from_ascii_byte(*chunk) as u32)
+        });
 
         let last_byte_mask = 0b1111_1111;
 
-        vec!(
+        vec![
             (chunk_value >> 16 & last_byte_mask) as u8,
             (chunk_value >> 8 & last_byte_mask) as u8,
-            (chunk_value & last_byte_mask) as u8
-        )
+            (chunk_value & last_byte_mask) as u8,
+        ]
     }
 
     fn decimal_value_from_ascii_byte(ascii_byte: u8) -> u8 {

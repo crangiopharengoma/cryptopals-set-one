@@ -15,6 +15,12 @@ impl Digest for Hex {
     }
 }
 
+impl Digest for &Hex {
+    fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
 impl FromStr for Hex {
     type Err = Error;
 
@@ -31,7 +37,9 @@ impl BitXor for Hex {
     type Output = Hex;
 
     fn bitxor(self, rhs: Self) -> Self::Output {
-        let bytes = self.bytes().iter()
+        let bytes = self
+            .bytes()
+            .iter()
             .zip(rhs.bytes().iter())
             .map(|(x, y)| x ^ y)
             .collect();

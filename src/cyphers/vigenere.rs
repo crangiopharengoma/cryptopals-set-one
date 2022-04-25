@@ -1,44 +1,41 @@
 use crate::cyphers::caesar_cypher;
 use crate::encoding::Digest;
 
-pub fn encrypt(message: &dyn Digest, key: &[u8]) -> Vec<u8> {
+pub fn encrypt<T: Digest>(message: T, key: &[u8]) -> Vec<u8> {
     // this will actually make the key 3x longer than the message, but the zip will handle that
-    key.repeat(message.len()).iter()
+    key.repeat(message.len())
+        .iter()
         .zip(message.bytes().iter())
         .map(|(x, y)| x ^ y)
         .collect()
 }
 
-pub fn decrypt(message: &dyn Digest, key: &[u8]) -> Vec<u8> {
+pub fn decrypt<T: Digest>(message: T, key: &[u8]) -> Vec<u8> {
     // decrypting is just repeating the process of encrypting
     encrypt(message, key)
 }
 
-pub fn break_encryption(encrypted_message: &dyn Digest) -> Vec<u8> {
+pub fn break_encryption<T: Digest>(encrypted_message: T) -> Vec<u8> {
     let max_key_length = if encrypted_message.len() > 200 {
         50
     } else {
         encrypted_message.len() / 4
     };
 
-    let key_size = (2..max_key_length).min_by_key(|key_size| {
-        encrypted_message.normalized_edit_distance(key_size)
-    }).unwrap();
+    let key_size = (2..max_key_length)
+        .min_by_key(|key_size| encrypted_message.normalized_edit_distance(key_size))
+        .unwrap();
 
     let key: Vec<u8> = (0..key_size)
         .map(|i| {
-            caesar_cypher::find_key(&encrypted_message
-                .bytes()
-                .chunks(key_size)
-                .map(|chunk| {
-                    if chunk.len() > i {
-                        chunk[i]
-                    } else {
-                        0
-                    }
-                })
-                .collect::<Vec<u8>>()
-            ).expect("key brute force failed")
+            caesar_cypher::find_key(
+                &encrypted_message
+                    .bytes()
+                    .chunks(key_size)
+                    .map(|chunk| if chunk.len() > i { chunk[i] } else { 0 })
+                    .collect::<Vec<u8>>(),
+            )
+            .expect("key brute force failed")
         })
         .collect();
 
@@ -51,12 +48,15 @@ mod test {
 
     use crate::cyphers::vigenere;
     use crate::cyphers::vigenere::{decrypt, encrypt};
-    use crate::encoding::Digest;
     use crate::encoding::hex::Hex;
+    use crate::encoding::Digest;
 
     #[test]
     fn string_is_encrypted() {
-        let plain_text = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal".as_bytes().to_vec();
+        let plain_text =
+            "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"
+                .as_bytes()
+                .to_vec();
         let key = "ICE".as_bytes();
         let expected_encrypted = Hex::from_str("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f").unwrap();
 

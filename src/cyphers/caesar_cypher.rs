@@ -6,9 +6,10 @@ use crate::encoding::Digest;
 /// try to guess what key was used to encrypt the phrase
 ///
 /// Will return none if none of the bytes is valid ascii after xor against every possible u8 value
-pub fn find_key(message: &dyn Digest) -> Option<u8> {
+pub fn find_key<T: Digest>(message: T) -> Option<u8> {
     (0..u8::MAX).max_by_key(|key| {
-        message.bytes()
+        message
+            .bytes()
             .iter()
             .map(|byte| byte ^ key)
             .collect::<Vec<u8>>()
@@ -17,16 +18,13 @@ pub fn find_key(message: &dyn Digest) -> Option<u8> {
 }
 
 /// Encrypts a message with the given key using single-character xor
-pub fn encrypt(message: &dyn Digest, key: u8) -> Vec<u8> {
-    message.bytes()
-        .iter()
-        .map(|byte| byte ^ key)
-        .collect()
+pub fn encrypt<T: Digest>(message: T, key: u8) -> Vec<u8> {
+    message.bytes().iter().map(|byte| byte ^ key).collect()
 }
 
 /// Decrypts a message encrypted by single-character xor
 ///
 /// Returns a vec containing the decrypted bytes
-pub fn decrypt(message: &dyn Digest, key: u8) -> Vec<u8> {
+pub fn decrypt<T: Digest>(message: T, key: u8) -> Vec<u8> {
     encrypt(message, key)
 }
