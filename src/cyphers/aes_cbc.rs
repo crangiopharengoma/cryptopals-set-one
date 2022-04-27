@@ -1,8 +1,22 @@
 use crate::cyphers::aes_ecb;
 
+pub fn encrypt(plain_text: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
+    let mut last_block = iv.to_vec();
+
+    plain_text
+        .chunks(16)
+        .flat_map(|chunk| {
+            let xor_block: Vec<u8> = chunk.iter().zip(&last_block).map(|(x, y)| x ^ y).collect();
+            let encrypted_message = aes_ecb::encrypt_block(key, &xor_block);
+            last_block = encrypted_message.clone();
+            // println!("encrypted message: {encrypted_message:?}");
+            encrypted_message
+        })
+        .collect()
+}
+
 pub fn decrypt(encrypted_message: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
     let mut last_block = iv;
-    println!("decrypting");
     encrypted_message
         .chunks(16)
         .flat_map(|chunk| {

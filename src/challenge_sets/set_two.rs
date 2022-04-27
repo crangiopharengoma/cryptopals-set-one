@@ -1,6 +1,5 @@
-use openssl::symm::{Crypter, Mode};
-
-use cryptopals::cyphers::{aes_cbc, padding};
+use cryptopals::cyphers::encryption_oracle::AesType;
+use cryptopals::cyphers::{aes_cbc, encryption_oracle, padding};
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
 
@@ -9,8 +8,12 @@ pub fn run() {
     challenge_nine();
     println!("Success!");
 
-    print!("Starting Challenge Ten ...");
+    print!("Starting Challenge Ten... ");
     challenge_ten();
+    println!("Success!");
+
+    print!("Starting Challenge Eleven... ");
+    challenge_eleven();
     println!("Success!");
 }
 
@@ -39,4 +42,18 @@ fn challenge_ten() {
         "The message is: {}",
         String::from_utf8_lossy(&decrypted_message)
     );
+}
+
+/// https://cryptopals.com/sets/2/challenges/11
+fn challenge_eleven() {
+    let meaningless_jibber_jabber = "X".repeat(48).as_bytes().to_vec();
+
+    (0..11).for_each(|_| {
+        let encrypted_message = encryption_oracle::encrypt(&meaningless_jibber_jabber);
+        let aes_type = encryption_oracle::detect_aes_type(encrypted_message);
+        match aes_type {
+            AesType::CBC => println!("CBC encryption used"),
+            AesType::ECB => println!("ECB encryption used"),
+        };
+    })
 }

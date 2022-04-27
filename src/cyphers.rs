@@ -3,3 +3,4 @@ pub mod aes_ecb;
 pub mod caesar_cypher;
 pub mod padding;
 pub mod vigenere;
+pub mod encryption_oracle;
