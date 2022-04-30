@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::OrderedFloat;
 
 pub mod base64;
@@ -72,6 +74,19 @@ pub trait Digest {
             .sum::<f64>()
                 / 6.0,
         )
+    }
+
+    /// detects whether a given Digest contains duplicated chunks of a given length
+    fn duplicate_chunks(&self, chunk_size: usize) -> bool {
+        let mut map: HashMap<&[u8], usize> = HashMap::new();
+        self.bytes().chunks(chunk_size).for_each(|chunk| {
+            map.entry(chunk).and_modify(|e| *e += 1).or_insert(1);
+        });
+        // println!("ecb map {map:?}");
+        *map.values()
+            .reduce(|accum, val| if val > accum { val } else { accum })
+            .unwrap()
+            > 1
     }
 }
 

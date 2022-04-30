@@ -1,15 +1,48 @@
-use std::collections::HashMap;
+use std::str::FromStr;
 
 use openssl::rand as ssl_rand;
 use rand::Rng;
 
-use crate::cyphers::encryption_oracle::AesType::{CBC, ECB};
+use crate::cyphers::aes_ecb::generate_key;
+use crate::cyphers::encryption_oracle::AesMode::{CBC, ECB};
 use crate::cyphers::{aes_cbc, aes_ecb};
+use crate::encoding::base64::Base64;
 use crate::encoding::Digest;
 
-pub enum AesType {
+#[derive(Debug, PartialEq)]
+pub enum AesMode {
     ECB,
     CBC,
+}
+
+pub struct ECBOracle {
+    key: [u8; 16],
+}
+
+impl Default for ECBOracle {
+    /// Returns a new ECBOracle with a randomly generated 128 bit key
+    fn default() -> Self {
+        let key = generate_key();
+        ECBOracle { key }
+    }
+}
+
+impl ECBOracle {
+    /// Returns a new ECBOracle with a randomly generated 128 bit key
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Encrypts some plain text using ECB mode
+    /// Randomly generates a key
+    pub fn encrypt<T: Digest>(&self, message: T) -> Vec<u8> {
+        let suffix = Base64::from_str(
+            "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK",
+        ).unwrap();
+
+        let final_message = [message.bytes(), suffix.bytes()].concat();
+        aes_ecb::encrypt(&self.key, final_message)
+    }
 }
 
 /// Encrypts some plain text using a randomly generated 128 bit key
@@ -48,7 +81,7 @@ fn random_bytes() -> Vec<u8> {
     rand_bytes[..len].to_vec()
 }
 
-pub fn detect_aes_type<T: Digest>(encrypted_message: T) -> AesType {
+pub fn detect_aes_type<T: Digest>(encrypted_message: T) -> AesMode {
     if detect_aes_ecb(encrypted_message) {
         ECB
     } else {
@@ -58,13 +91,5 @@ pub fn detect_aes_type<T: Digest>(encrypted_message: T) -> AesType {
 
 /// Scans an encrypted message and guesses if it has been encrypted using aes_ecb with a 128 bit key
 pub fn detect_aes_ecb<T: Digest>(encrypted_message: T) -> bool {
-    let mut map: HashMap<&[u8], usize> = HashMap::new();
-    encrypted_message.bytes().chunks(16).for_each(|chunk| {
-        map.entry(chunk).and_modify(|e| *e += 1).or_insert(1);
-    });
-    // println!("ecb map {map:?}");
-    *map.values()
-        .reduce(|accum, val| if val > accum { val } else { accum })
-        .unwrap()
-        > 1
+    encrypted_message.duplicate_chunks(16)
 }
