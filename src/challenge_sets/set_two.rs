@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
-use cryptopals::cyphers::encryption_oracle::{AesMode, ECBOracle};
+use cryptopals::cyphers::encryption_oracle::{AesMode, ECBOracle, ECBOracleImpl};
 use cryptopals::cyphers::{aes_cbc, encryption_oracle, padding};
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
+use cryptopals::profile::{Profile, ProfileEncrypter};
 
 pub fn run() {
     print!("Starting Challenge Nine... ");
@@ -20,7 +21,11 @@ pub fn run() {
 
     println!("Starting Challenge Twelve... ");
     challenge_twelve();
-    println("Success!");
+    println!("Success!");
+
+    println!("Starting Challenge Thirteen... ");
+    challenge_thirteen();
+    println!("???")
 }
 
 /// https://cryptopals.com/sets/2/challenges/9
@@ -66,7 +71,7 @@ fn challenge_eleven() {
 
 /// https://cryptopals.com/sets/2/challenges/12
 fn challenge_twelve() {
-    let oracle = ECBOracle::new();
+    let oracle = ECBOracleImpl::new();
     let key_length = find_key_length(&oracle).expect("key length > 128");
     println!("key length is {}", key_length);
 
@@ -81,7 +86,7 @@ fn challenge_twelve() {
     );
 }
 
-fn decrypt_oracle(oracle: &ECBOracle, key_length: usize) -> Vec<u8> {
+fn decrypt_oracle<T: ECBOracle>(oracle: &T, key_length: usize) -> Vec<u8> {
     let mut decrypted_message = Vec::new();
     let encrypted_message = oracle.encrypt("".as_bytes().to_vec());
 
@@ -116,7 +121,7 @@ fn prefix_length(iteration: usize, key_length: usize) -> usize {
     }
 }
 
-fn last_byte_map(oracle: &ECBOracle, known_bytes: &[u8]) -> HashMap<Vec<u8>, u8> {
+fn last_byte_map<T: ECBOracle>(oracle: &T, known_bytes: &[u8]) -> HashMap<Vec<u8>, u8> {
     let last_byte_dict: HashMap<Vec<u8>, u8> = (0..255)
         .map(|i| {
             let mut last_byte_possibility = known_bytes.to_vec();
@@ -129,7 +134,7 @@ fn last_byte_map(oracle: &ECBOracle, known_bytes: &[u8]) -> HashMap<Vec<u8>, u8>
     last_byte_dict
 }
 
-fn find_key_length(oracle: &ECBOracle) -> Option<usize> {
+fn find_key_length<T: ECBOracle>(oracle: &T) -> Option<usize> {
     let mut key_length = None;
     (1..128).for_each(|i| {
         let test_message_a = "A".repeat(i).into_bytes();
@@ -143,4 +148,66 @@ fn find_key_length(oracle: &ECBOracle) -> Option<usize> {
         }
     });
     key_length
+}
+
+///https://cryptopals.com/sets/2/challenges/13
+fn challenge_thirteen() {
+    // break encryption
+
+    let target_email = "sam.rosenberg@secret.com".to_string();
+
+    let oracle = ProfileOracle {
+        profile_encrypter: ProfileEncrypter::new(),
+        target_email,
+    };
+    let key_length = find_key_length(&oracle).expect("key length > 128");
+
+    let aes_mode = encryption_oracle::detect_aes_type(&oracle.encrypt("A".repeat(48).into_bytes()));
+    assert_eq!(aes_mode, AesMode::ECB);
+
+    // with email=target_email at the start of a string we need to push two bytes to ensure that
+    // padded admin is contained in an entire 16 byte bloc
+    let mut padded_admin = "A"
+        .repeat(key_length - ((oracle.target_email.len() + 6) % key_length))
+        .into_bytes();
+    padded_admin.extend_from_slice(&padding::pkcs7("admin".as_bytes(), key_length));
+    let encrypted_admin = oracle.encrypt(padded_admin);
+
+    let byte_remainder = (0..key_length).find(|i| {
+        let encrypted_a = oracle.encrypt(&"A".repeat(*i).into_bytes());
+        let encrypted_b = oracle.encrypt(&"A".repeat(i + 1).into_bytes());
+        encrypted_b.len() > encrypted_a.len()
+    });
+
+    let target_remainder = {
+        match byte_remainder {
+            Some(remainder) => key_length + 5 - remainder,
+            None => 5,
+        }
+    };
+
+    let mut trojan_encrypted = oracle.encrypt(&"A".repeat(target_remainder).into_bytes());
+    trojan_encrypted.truncate(trojan_encrypted.len() - 16);
+
+    trojan_encrypted.extend_from_slice(&encrypted_admin[key_length * 2..key_length * 3]);
+
+    println!(
+        "decrypted is: {}",
+        oracle.profile_encrypter.decrypt(&trojan_encrypted)
+    );
+    //success!
+}
+
+struct ProfileOracle {
+    profile_encrypter: ProfileEncrypter,
+    target_email: String,
+}
+
+impl ECBOracle for ProfileOracle {
+    fn encrypt<T: Digest>(&self, message: T) -> Vec<u8> {
+        let mut known_bytes = self.target_email.clone().into_bytes();
+        known_bytes.extend_from_slice(message.bytes());
+        let profile = Profile::profile_for(&String::from_utf8(known_bytes).unwrap());
+        self.profile_encrypter.encrypt(&profile)
+    }
 }

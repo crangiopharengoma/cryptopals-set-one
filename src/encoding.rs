@@ -4,6 +4,7 @@ use crate::OrderedFloat;
 
 pub mod base64;
 pub mod hex;
+pub mod structured_cookie;
 
 impl Digest for Vec<u8> {
     fn bytes(&self) -> &[u8] {

@@ -15,33 +15,39 @@ pub enum AesMode {
     CBC,
 }
 
-pub struct ECBOracle {
+pub trait ECBOracle {
+    fn encrypt<T: Digest>(&self, message: T) -> Vec<u8>;
+}
+
+pub struct ECBOracleImpl {
     key: [u8; 16],
 }
 
-impl Default for ECBOracle {
+impl Default for ECBOracleImpl {
     /// Returns a new ECBOracle with a randomly generated 128 bit key
     fn default() -> Self {
         let key = generate_key();
-        ECBOracle { key }
+        ECBOracleImpl { key }
     }
 }
 
-impl ECBOracle {
-    /// Returns a new ECBOracle with a randomly generated 128 bit key
-    pub fn new() -> Self {
-        Self::default()
-    }
-
+impl ECBOracle for ECBOracleImpl {
     /// Encrypts some plain text using ECB mode
     /// Randomly generates a key
-    pub fn encrypt<T: Digest>(&self, message: T) -> Vec<u8> {
+    fn encrypt<T: Digest>(&self, message: T) -> Vec<u8> {
         let suffix = Base64::from_str(
             "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK",
         ).unwrap();
 
         let final_message = [message.bytes(), suffix.bytes()].concat();
         aes_ecb::encrypt(&self.key, final_message)
+    }
+}
+
+impl ECBOracleImpl {
+    /// Returns a new ECBOracle with a randomly generated 128 bit key
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 

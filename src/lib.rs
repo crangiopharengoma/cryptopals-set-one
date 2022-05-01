@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 
 pub mod cyphers;
 pub mod encoding;
+pub mod profile;
 
 pub type Error = Box<dyn std::error::Error>;
 
@@ -14,7 +15,9 @@ impl Eq for OrderedFloat {}
 #[allow(clippy::derive_ord_xor_partial_ord)]
 impl Ord for OrderedFloat {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.0.partial_cmp(&other.0).expect("ordered float is always a number")
+        self.0
+            .partial_cmp(&other.0)
+            .expect("ordered float is always a number")
     }
 }
 
