@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use std::str::FromStr;
 
@@ -151,10 +150,11 @@ fn challenge_eight() {
     let ecb_encrypted = hexes
         .iter()
         .max_by_key(|hex| {
-            let mut map: HashMap<&[u8], usize> = HashMap::new();
-            hex.bytes().chunks(16).for_each(|chunk| {
-                map.entry(chunk).and_modify(|e| *e += 1).or_insert(1);
-            });
+            let map = hex.map_blocks(16);
+            // let mut map: HashMap<&[u8], usize> = HashMap::new();
+            // hex.bytes().chunks(16).for_each(|chunk| {
+            //     map.entry(chunk).and_modify(|e| *e += 1).or_insert(1);
+            // });
             *map.values()
                 .reduce(|accum, val| if val > accum { val } else { accum })
                 .unwrap()

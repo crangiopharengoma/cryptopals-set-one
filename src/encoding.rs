@@ -78,16 +78,34 @@ pub trait Digest {
     }
 
     /// detects whether a given Digest contains duplicated chunks of a given length
-    fn duplicate_chunks(&self, chunk_size: usize) -> bool {
-        let mut map: HashMap<&[u8], usize> = HashMap::new();
-        self.bytes().chunks(chunk_size).for_each(|chunk| {
-            map.entry(chunk).and_modify(|e| *e += 1).or_insert(1);
-        });
-        // println!("ecb map {map:?}");
+    fn duplicate_blocks(&self, block_size: usize) -> bool {
+        let map = self.map_blocks(block_size);
         *map.values()
             .reduce(|accum, val| if val > accum { val } else { accum })
             .unwrap()
             > 1
+    }
+
+    /// returns a map of the unique blocks contained in the digest
+    /// keyed on the blocks themselves
+    /// value is the count of those blocks
+    fn map_blocks(&self, block_size: usize) -> HashMap<Vec<u8>, usize> {
+        let mut map: HashMap<Vec<u8>, usize> = HashMap::new();
+        self.bytes().chunks(block_size).for_each(|block| {
+            map.entry(block.to_vec())
+                .and_modify(|e| *e += 1)
+                .or_insert(1);
+        });
+        map
+    }
+
+    /// returns a map of the blocks that appear more than once in the digest
+    /// keyed on the blocks themselves
+    fn map_duplicate_blocks(&self, block_size: usize) -> HashMap<Vec<u8>, usize> {
+        self.map_blocks(block_size)
+            .into_iter()
+            .filter(|(_, v)| *v > 1)
+            .collect()
     }
 }
 
