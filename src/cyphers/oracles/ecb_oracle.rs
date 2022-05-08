@@ -4,7 +4,7 @@ use std::str::FromStr;
 use openssl::rand as ssl_rand;
 use rand::Rng;
 
-use crate::cyphers::encryption_oracle::AesMode::{CBC, ECB};
+use crate::cyphers::AesMode;
 use crate::cyphers::{aes_cbc, aes_ecb};
 use crate::encoding::base64::Base64;
 use crate::encoding::Digest;
@@ -16,12 +16,6 @@ fn prefix_length(iteration: usize, key_length: usize) -> usize {
     } else {
         key_length - modulus
     }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum AesMode {
-    ECB,
-    CBC,
 }
 
 pub trait ECBOracle {
@@ -163,7 +157,7 @@ pub trait ECBOracle {
 
         if let Some(length) = key_length {
             let aes_mode = detect_aes_type(self.encrypt("A".repeat(length * 3).into_bytes()));
-            if aes_mode != ECB {
+            if aes_mode != AesMode::ECB {
                 panic!("ECBOracle not using ECB mode");
             }
         }
@@ -281,9 +275,9 @@ fn random_bytes() -> Vec<u8> {
 
 pub fn detect_aes_type<T: Digest>(encrypted_message: T) -> AesMode {
     if detect_aes_ecb(encrypted_message) {
-        ECB
+        AesMode::ECB
     } else {
-        CBC
+        AesMode::CBC
     }
 }
 
@@ -296,7 +290,7 @@ pub fn detect_aes_ecb<T: Digest>(encrypted_message: T) -> bool {
 mod tests {
     use std::str::FromStr;
 
-    use crate::cyphers::encryption_oracle::{BasicECBOracle, ECBOracle, RandomPrefixECBOracle};
+    use crate::cyphers::oracles::ecb_oracle::{BasicECBOracle, ECBOracle, RandomPrefixECBOracle};
     use crate::encoding::base64::Base64;
     use crate::encoding::Digest;
 
