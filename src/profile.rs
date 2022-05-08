@@ -118,7 +118,7 @@ impl From<&Profile> for StructuredCookie {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use std::str::FromStr;
 
     use crate::encoding::structured_cookie::StructuredCookie;

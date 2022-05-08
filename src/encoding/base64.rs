@@ -186,7 +186,7 @@ impl Base64 {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use std::str::FromStr;
 
     use crate::encoding::base64::Base64;

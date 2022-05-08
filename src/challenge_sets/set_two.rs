@@ -1,8 +1,7 @@
-use cryptopals::cyphers::encryption_oracle::{
-    AesMode, BasicECBOracle, ECBOracle, RandomPrefixECBOracle,
-};
+use cryptopals::cyphers::oracles::ecb_oracle;
+use cryptopals::cyphers::oracles::ecb_oracle::{BasicECBOracle, ECBOracle, RandomPrefixECBOracle};
 use cryptopals::cyphers::padding::pkcs7;
-use cryptopals::cyphers::{aes_cbc, encryption_oracle};
+use cryptopals::cyphers::{aes_cbc, AesMode};
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
 use cryptopals::profile::{Profile, ProfileEncrypter};
@@ -69,8 +68,8 @@ fn challenge_eleven() {
     let meaningless_jibber_jabber = "X".repeat(48).as_bytes().to_vec();
 
     (0..11).for_each(|_| {
-        let encrypted_message = encryption_oracle::encrypt(&meaningless_jibber_jabber);
-        let aes_type = encryption_oracle::detect_aes_type(encrypted_message);
+        let encrypted_message = ecb_oracle::encrypt(&meaningless_jibber_jabber);
+        let aes_type = ecb_oracle::detect_aes_type(encrypted_message);
         match aes_type {
             AesMode::CBC => println!("CBC encryption used"),
             AesMode::ECB => println!("ECB encryption used"),

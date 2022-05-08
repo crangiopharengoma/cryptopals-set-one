@@ -287,7 +287,7 @@ pub fn detect_aes_ecb<T: Digest>(encrypted_message: T) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use std::str::FromStr;
 
     use crate::cyphers::oracles::ecb_oracle::{BasicECBOracle, ECBOracle, RandomPrefixECBOracle};
