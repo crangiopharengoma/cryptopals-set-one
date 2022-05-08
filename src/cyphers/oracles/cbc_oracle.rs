@@ -29,9 +29,7 @@ impl CBCOracle {
 
     pub fn is_admin(&self, cipher_text: &[u8]) -> bool {
         let plain_text = aes_cbc::decrypt(cipher_text, &self.key, &self.iv);
-        println!("plain_text: {plain_text:?}");
         if let Ok(message) = String::from_utf8(plain_text) {
-            println!("message: {message}");
             message.contains(";admin=true;")
         } else {
             false
