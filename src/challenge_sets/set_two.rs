@@ -1,7 +1,8 @@
 use cryptopals::cyphers::encryption_oracle::{
     AesMode, BasicECBOracle, ECBOracle, RandomPrefixECBOracle,
 };
-use cryptopals::cyphers::{aes_cbc, encryption_oracle, padding};
+use cryptopals::cyphers::padding::pkcs7;
+use cryptopals::cyphers::{aes_cbc, encryption_oracle};
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
 use cryptopals::profile::{Profile, ProfileEncrypter};
@@ -30,6 +31,10 @@ pub fn run() {
     println!("Starting Challenge Fourteen... ");
     challenge_fourteen();
     println!("Success!");
+
+    println!("Starting Challenge Fifteen... ");
+    challenge_fifteen();
+    println!("Success!");
 }
 
 /// https://cryptopals.com/sets/2/challenges/9
@@ -38,7 +43,7 @@ fn challenge_nine() {
     let target_len = 20;
     let expected_padded = "YELLOW SUBMARINE\x04\x04\x04\x04";
 
-    let padded = padding::pkcs7(plain_text.as_bytes(), target_len);
+    let padded = pkcs7::pad(plain_text.as_bytes(), target_len);
 
     assert_eq!(expected_padded.as_bytes(), padded)
 }
@@ -102,7 +107,7 @@ fn challenge_thirteen() {
     let mut padded_admin = "A"
         .repeat(key_length - ((oracle.target_email.len() + 6) % key_length))
         .into_bytes();
-    padded_admin.extend_from_slice(&padding::pkcs7("admin".as_bytes(), key_length));
+    padded_admin.extend_from_slice(&pkcs7::pad("admin".as_bytes(), key_length));
     let encrypted_admin = oracle.encrypt(padded_admin);
 
     let byte_remainder = (0..key_length).find(|i| {
@@ -143,6 +148,7 @@ impl ECBOracle for ProfileOracle {
     }
 }
 
+/// https://cryptopals.com/sets/2/challenges/14
 fn challenge_fourteen() {
     let oracle = RandomPrefixECBOracle::new();
 
@@ -151,4 +157,18 @@ fn challenge_fourteen() {
         "The message is: \n{}\n",
         String::from_utf8_lossy(&decrypted_message)
     );
+}
+
+///https://cryptopals.com/sets/2/challenges/15
+fn challenge_fifteen() {
+    let unpadded = pkcs7::try_unpad("ICE ICE BABY\x04\x04\x04\x04".as_bytes(), 16).unwrap();
+    let expected = "ICE ICE BABY".as_bytes();
+
+    assert_eq!(unpadded, expected);
+
+    let unpadded = pkcs7::try_unpad("ICE ICE BABY\x05\x05\x05\x05".as_bytes(), 16);
+    assert!(unpadded.is_err());
+
+    let unpadded = pkcs7::try_unpad("ICE ICE BABY\x01\x02\x03\x04".as_bytes(), 16);
+    assert!(unpadded.is_err());
 }

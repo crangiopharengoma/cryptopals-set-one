@@ -2,7 +2,7 @@ use openssl::error::ErrorStack;
 use openssl::symm::{Cipher, Crypter, Mode};
 use openssl::{rand, symm};
 
-use crate::cyphers::padding;
+use crate::cyphers::padding::pkcs7;
 use crate::encoding::Digest;
 
 pub fn generate_key() -> [u8; 16] {
@@ -48,7 +48,7 @@ pub(crate) fn decrypt_block(key: &[u8], block: &[u8]) -> Vec<u8> {
     decrypter.pad(false);
 
     let block_size = cipher.block_size();
-    let input = padding::pkcs7(block, block_size);
+    let input = pkcs7::pad(block, block_size);
 
     let mut decrypted_block = vec![0; input.len() + block_size];
     decrypter
@@ -73,7 +73,7 @@ pub(crate) fn encrypt_block(key: &[u8], block: &[u8]) -> Vec<u8> {
     encrypter.pad(false);
 
     let block_size = cipher.block_size();
-    let input = padding::pkcs7(block, block_size);
+    let input = pkcs7::pad(block, block_size);
 
     let mut encrypted_block = vec![0; input.len() + block_size];
 

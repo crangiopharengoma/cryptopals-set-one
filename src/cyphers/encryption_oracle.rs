@@ -4,7 +4,6 @@ use std::str::FromStr;
 use openssl::rand as ssl_rand;
 use rand::Rng;
 
-use crate::cyphers::aes_ecb::generate_key;
 use crate::cyphers::encryption_oracle::AesMode::{CBC, ECB};
 use crate::cyphers::{aes_cbc, aes_ecb};
 use crate::encoding::base64::Base64;
@@ -181,7 +180,7 @@ pub struct RandomPrefixECBOracle {
 
 impl Default for RandomPrefixECBOracle {
     fn default() -> Self {
-        let key = generate_key();
+        let key = aes_ecb::generate_key();
 
         let prefix_length = rand::thread_rng().gen_range(1..=255);
         let mut prefix = vec![0; prefix_length];
@@ -219,7 +218,7 @@ pub struct BasicECBOracle {
 impl Default for BasicECBOracle {
     /// Returns a new ECBOracle with a randomly generated 128 bit key
     fn default() -> Self {
-        let key = generate_key();
+        let key = aes_ecb::generate_key();
         BasicECBOracle { key }
     }
 }
