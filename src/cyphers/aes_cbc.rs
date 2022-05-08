@@ -6,10 +6,14 @@ pub fn encrypt(plain_text: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
     plain_text
         .chunks(16)
         .flat_map(|chunk| {
-            let xor_block: Vec<u8> = chunk.iter().zip(&last_block).map(|(x, y)| x ^ y).collect();
+            let xor_block: Vec<u8> = chunk
+                .iter()
+                .chain([0b0; 16].iter())
+                .zip(&last_block)
+                .map(|(x, y)| x ^ y)
+                .collect();
             let encrypted_message = aes_ecb::encrypt_block(key, &xor_block);
             last_block = encrypted_message.clone();
-            // println!("encrypted message: {encrypted_message:?}");
             encrypted_message
         })
         .collect()

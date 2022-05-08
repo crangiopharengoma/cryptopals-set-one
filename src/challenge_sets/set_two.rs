@@ -34,6 +34,10 @@ pub fn run() {
     println!("Starting Challenge Fifteen... ");
     challenge_fifteen();
     println!("Success!");
+
+    println!("Starting Challenge Sixteen... ");
+    challenge_sixteen();
+    println!("Success!");
 }
 
 /// https://cryptopals.com/sets/2/challenges/9
@@ -170,4 +174,9 @@ fn challenge_fifteen() {
 
     let unpadded = pkcs7::try_unpad("ICE ICE BABY\x01\x02\x03\x04".as_bytes(), 16);
     assert!(unpadded.is_err());
+}
+
+///https://cryptopals.com/sets/2/challenges/16
+fn challenge_sixteen() {
+    assert!(false);
 }
