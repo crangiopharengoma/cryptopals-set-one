@@ -177,6 +177,4 @@ fn challenge_fifteen() {
 }
 
 ///https://cryptopals.com/sets/2/challenges/16
-fn challenge_sixteen() {
-    assert!(false);
-}
+fn challenge_sixteen() {}

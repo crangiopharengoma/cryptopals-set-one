@@ -22,7 +22,12 @@ impl CBCOracle {
     pub fn encrypt<T: Digest>(&self, message: &T) -> Vec<u8> {
         let prefix = "comment1=cooking%20MCs;userdata=".as_bytes();
         let suffix = ";comment2=%20like%20a%20pound%20of%20bacon".as_bytes();
-        let message = [prefix, message.bytes(), suffix].concat();
+
+        let message =
+            String::from_utf8(message.bytes().to_vec()).expect("message is not valid utf8");
+        let message = message.replace('=', "\"=\"").replace(';', "\";\"");
+
+        let message = [prefix, message.as_bytes(), suffix].concat();
 
         aes_cbc::encrypt(&message, &self.key, &self.iv)
     }
@@ -41,6 +46,15 @@ impl CBCOracle {
 mod tests {
     use crate::cyphers::aes_cbc;
     use crate::cyphers::oracles::cbc_oracle::CBCOracle;
+
+    #[test]
+    fn encrypt_correctly_sanitises_text() {
+        let oracle = CBCOracle::new();
+        let encrypted = oracle.encrypt(&";admin=true;".as_bytes().to_vec());
+
+        let is_admin = oracle.is_admin(&encrypted);
+        assert!(!is_admin);
+    }
 
     #[test]
     fn cipher_text_contains_admin() {
