@@ -1,3 +1,4 @@
+use cryptopals::cyphers::oracles::cbc_oracle::CBCOracle;
 use cryptopals::cyphers::oracles::ecb_oracle;
 use cryptopals::cyphers::oracles::ecb_oracle::{BasicECBOracle, ECBOracle, RandomPrefixECBOracle};
 use cryptopals::cyphers::padding::pkcs7;
@@ -177,4 +178,34 @@ fn challenge_fifteen() {
 }
 
 ///https://cryptopals.com/sets/2/challenges/16
-fn challenge_sixteen() {}
+fn challenge_sixteen() {
+    let oracle = CBCOracle::new();
+    let attack_text = "AAAAAAAAAAAAAAAAAAAA:admin?true:AAAAAAAAAAAAAAAA"
+        .as_bytes()
+        .to_vec();
+
+    let mut cipher_text = oracle.encrypt(&attack_text);
+
+    let semi_colon_mask = 0b_01;
+    let equal_sign_mask = 0b_10;
+
+    // Based on the structure of the prepended text and the attack text encrypted
+    // these are the positions 1 block before/1 block after the characters I'm trying to change
+    // positions 4; 10; 15
+    let positions = vec![
+        (36, semi_colon_mask),
+        (42, equal_sign_mask),
+        (47, semi_colon_mask),
+        (68, semi_colon_mask),
+        (74, equal_sign_mask),
+        (83, semi_colon_mask),
+    ];
+
+    positions.into_iter().for_each(|(pos, mask)| {
+        let target = cipher_text.remove(pos);
+        let target = target ^ mask;
+        cipher_text.insert(pos, target);
+    });
+
+    assert!(oracle.is_admin(&cipher_text));
+}
