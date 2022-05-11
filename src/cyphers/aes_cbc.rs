@@ -1,4 +1,5 @@
 use crate::cyphers::aes_ecb;
+use crate::cyphers::padding::pkcs7;
 
 pub fn encrypt(plain_text: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
     let mut last_block = iv.to_vec();
@@ -6,12 +7,14 @@ pub fn encrypt(plain_text: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
     plain_text
         .chunks(16)
         .flat_map(|chunk| {
-            let xor_block: Vec<u8> = chunk
-                .iter()
-                .chain([0b0; 16].iter())
-                .zip(&last_block)
-                .map(|(x, y)| x ^ y)
-                .collect();
+            let chunk = {
+                if chunk.len() < 16 {
+                    pkcs7::pad(chunk, 16)
+                } else {
+                    chunk.to_vec()
+                }
+            };
+            let xor_block: Vec<u8> = chunk.iter().zip(&last_block).map(|(x, y)| x ^ y).collect();
             let encrypted_message = aes_ecb::encrypt_block(key, &xor_block);
             last_block = encrypted_message.clone();
             encrypted_message
