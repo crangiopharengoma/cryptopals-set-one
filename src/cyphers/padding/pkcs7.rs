@@ -16,8 +16,14 @@ pub fn pad(plain_text: &[u8], target_length: usize) -> Vec<u8> {
 ///
 /// Panics
 /// If the plain_text slice is empty
-pub fn try_unpad(plain_text: &[u8]) -> Result<Vec<u8>, Error> {
+pub fn try_unpad(plain_text: &[u8], block_length: usize) -> Result<Vec<u8>, Error> {
     let last_byte = *plain_text.last().unwrap();
+
+    if last_byte as usize > block_length {
+        return Err(Box::new(PaddingError::InvalidPadding(format!(
+            "last byte greater than maximum padding"
+        ))));
+    }
 
     let mut result = plain_text.to_vec();
     for _ in (plain_text.len() - last_byte as usize)..plain_text.len() {
@@ -78,21 +84,27 @@ mod test {
     fn plain_text_is_unpadded() {
         let plain_text = "ICE ICE BABY\x04\x04\x04\x04";
         let expected = "ICE ICE BABY".as_bytes();
+        let block_length = 16;
 
-        let result = try_unpad(plain_text.as_bytes()).unwrap();
+        let result = try_unpad(plain_text.as_bytes(), block_length).unwrap();
 
         assert_eq!(expected, result);
     }
 
     #[test]
     fn invalid_padding_is_detected() {
+        let block_length = 16;
+
         let plain_text = "ICE ICE BABY\x05\x05\x05\x05";
-        let result = try_unpad(plain_text.as_bytes());
+        let result = try_unpad(plain_text.as_bytes(), block_length);
         assert!(result.is_err());
 
         let plain_text = "ICE ICE BABY\x01\x02\x03\x04";
-        let result = try_unpad(plain_text.as_bytes());
+        let result = try_unpad(plain_text.as_bytes(), block_length);
+        assert!(result.is_err());
 
+        let plain_text = "ICE ICE BABY\x01\x02\x04\x7f";
+        let result = try_unpad(plain_text.as_bytes(), block_length);
         assert!(result.is_err());
     }
 }

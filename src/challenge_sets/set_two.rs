@@ -165,15 +165,15 @@ fn challenge_fourteen() {
 
 ///https://cryptopals.com/sets/2/challenges/15
 fn challenge_fifteen() {
-    let unpadded = pkcs7::try_unpad("ICE ICE BABY\x04\x04\x04\x04".as_bytes()).unwrap();
+    let unpadded = pkcs7::try_unpad("ICE ICE BABY\x04\x04\x04\x04".as_bytes(), 16).unwrap();
     let expected = "ICE ICE BABY".as_bytes();
 
     assert_eq!(unpadded, expected);
 
-    let unpadded = pkcs7::try_unpad("ICE ICE BABY\x05\x05\x05\x05".as_bytes());
+    let unpadded = pkcs7::try_unpad("ICE ICE BABY\x05\x05\x05\x05".as_bytes(), 16);
     assert!(unpadded.is_err());
 
-    let unpadded = pkcs7::try_unpad("ICE ICE BABY\x01\x02\x03\x04".as_bytes());
+    let unpadded = pkcs7::try_unpad("ICE ICE BABY\x01\x02\x03\x04".as_bytes(), 16);
     assert!(unpadded.is_err());
 }
 
