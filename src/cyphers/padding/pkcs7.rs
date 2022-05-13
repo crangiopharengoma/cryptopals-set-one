@@ -16,14 +16,8 @@ pub fn pad(plain_text: &[u8], target_length: usize) -> Vec<u8> {
 ///
 /// Panics
 /// If the plain_text slice is empty
-pub fn try_unpad(plain_text: &[u8], block_length: usize) -> Result<Vec<u8>, Error> {
+pub fn try_unpad(plain_text: &[u8]) -> Result<Vec<u8>, Error> {
     let last_byte = *plain_text.last().unwrap();
-
-    // assume any value greater than 16 is valid padding
-    // (i.e. the block did not require padding)
-    if last_byte as usize > block_length {
-        return Ok(plain_text.to_vec());
-    }
 
     let mut result = plain_text.to_vec();
     for _ in (plain_text.len() - last_byte as usize)..plain_text.len() {
@@ -82,25 +76,22 @@ mod test {
 
     #[test]
     fn plain_text_is_unpadded() {
-        let target_len = 16;
         let plain_text = "ICE ICE BABY\x04\x04\x04\x04";
         let expected = "ICE ICE BABY".as_bytes();
 
-        let result = try_unpad(plain_text.as_bytes(), target_len).unwrap();
+        let result = try_unpad(plain_text.as_bytes()).unwrap();
 
         assert_eq!(expected, result);
     }
 
     #[test]
     fn invalid_padding_is_detected() {
-        let target_len = 16;
-
         let plain_text = "ICE ICE BABY\x05\x05\x05\x05";
-        let result = try_unpad(plain_text.as_bytes(), target_len);
+        let result = try_unpad(plain_text.as_bytes());
         assert!(result.is_err());
 
         let plain_text = "ICE ICE BABY\x01\x02\x03\x04";
-        let result = try_unpad(plain_text.as_bytes(), target_len);
+        let result = try_unpad(plain_text.as_bytes());
 
         assert!(result.is_err());
     }
