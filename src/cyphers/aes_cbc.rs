@@ -3,17 +3,10 @@ use crate::cyphers::padding::pkcs7;
 
 pub fn encrypt(plain_text: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
     let mut last_block = iv.to_vec();
-
+    let plain_text = pkcs7::pad(plain_text, key.len());
     plain_text
-        .chunks(16)
+        .chunks(key.len())
         .flat_map(|chunk| {
-            let chunk = {
-                if chunk.len() < 16 {
-                    pkcs7::pad(chunk, 16)
-                } else {
-                    chunk.to_vec()
-                }
-            };
             let xor_block: Vec<u8> = chunk.iter().zip(&last_block).map(|(x, y)| x ^ y).collect();
             let encrypted_message = aes_ecb::encrypt_block(key, &xor_block);
             last_block = encrypted_message.clone();

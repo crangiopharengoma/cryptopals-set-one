@@ -4,7 +4,7 @@ use crate::Error;
 /// pads a given plain text to the target length using the pkcs#7 standard
 pub fn pad(plain_text: &[u8], target_length: usize) -> Vec<u8> {
     let mut owned = plain_text.to_vec();
-    let padding = target_length - owned.len();
+    let padding = target_length - (owned.len() % target_length);
 
     (0..padding).for_each(|_| owned.push(padding as u8));
 
@@ -56,13 +56,28 @@ mod test {
     }
 
     #[test]
-    fn padding_does_not_append_bytes() {
-        let plain_text = "YELLOW SUBMARINE";
+    fn padding_longer_string() {
+        let plain_text = "A string of a carefully selected length";
         let target_len = 16;
+
+        let expected_padded =
+            "A string of a carefully selected length\x09\x09\x09\x09\x09\x09\x09\x09\x09";
 
         let padded = pad(plain_text.as_bytes(), target_len);
 
-        assert_eq!(plain_text.as_bytes(), padded);
+        assert_eq!(expected_padded.as_bytes(), padded);
+    }
+
+    #[test]
+    fn padding_appends_full_blocks() {
+        let plain_text = "YELLOW SUBMARINE";
+        let target_len = 16;
+
+        let expected =
+            "YELLOW SUBMARINE\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10";
+        let padded = pad(plain_text.as_bytes(), target_len);
+
+        assert_eq!(expected.as_bytes(), padded);
     }
 
     #[test]
