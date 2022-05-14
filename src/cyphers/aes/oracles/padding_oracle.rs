@@ -1,5 +1,6 @@
-use rand::Rng;
 use std::str::FromStr;
+
+use rand::Rng;
 
 use crate::cyphers::aes::oracles::cbc_oracle::EncryptionResult;
 use crate::cyphers::aes::{self, cbc};
@@ -102,7 +103,7 @@ impl PaddingOracle for SamplePaddingOracle {
 
 impl Default for SamplePaddingOracle {
     fn default() -> Self {
-        let key = aes::generate_key();
+        let key = aes::generate_16_bit_key();
         SamplePaddingOracle { key }
     }
 }
@@ -130,7 +131,7 @@ impl SamplePaddingOracle {
             .get(rand::thread_rng().gen_range(0..strings.len()))
             .unwrap();
         let decoded = Base64::from_str(selection).unwrap();
-        let iv = aes::generate_key();
+        let iv = aes::generate_16_bit_key();
 
         EncryptionResult {
             cipher_text: cbc::encrypt(decoded.bytes(), &self.key, &iv),

@@ -14,8 +14,8 @@ pub struct EncryptionResult {
 
 impl Default for CBCOracle {
     fn default() -> Self {
-        let key = aes::generate_key();
-        let iv = aes::generate_key();
+        let key = aes::generate_16_bit_key();
+        let iv = aes::generate_16_bit_key();
         Self { key, iv }
     }
 }

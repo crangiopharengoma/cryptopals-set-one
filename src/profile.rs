@@ -26,7 +26,7 @@ pub struct ProfileEncrypter {
 
 impl Default for ProfileEncrypter {
     fn default() -> Self {
-        let key = aes::generate_key();
+        let key = aes::generate_16_bit_key();
         ProfileEncrypter { key }
     }
 }

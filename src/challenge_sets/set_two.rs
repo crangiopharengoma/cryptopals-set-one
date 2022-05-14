@@ -81,6 +81,7 @@ fn challenge_eleven() {
         match aes_type {
             AesMode::CBC => println!("CBC encryption used"),
             AesMode::ECB => println!("ECB encryption used"),
+            AesMode::CTR => println!("CTR encryption used"),
         };
     })
 }
