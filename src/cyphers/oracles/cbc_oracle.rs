@@ -1,7 +1,10 @@
+use std::str::FromStr;
+
 use rand::Rng;
 
 use crate::cyphers::padding::pkcs7::try_unpad;
 use crate::cyphers::{aes_cbc, aes_ecb};
+use crate::encoding::base64::Base64;
 use crate::encoding::Digest;
 
 pub struct CBCOracle {
@@ -27,26 +30,6 @@ impl CBCOracle {
         Self::default()
     }
 
-    pub fn encrypt_rand(&self) -> EncryptionResult {
-        let strings = vec![
-            "MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=",
-            "MDAwMDAxV2l0aCB0aGUgYmFzcyBraWNrZWQgaW4gYW5kIHRoZSBWZWdhJ3MgYXJlIHB1bXBpbic=",
-            "MDAwMDAyUXVpY2sgdG8gdGhlIHBvaW50LCB0byB0aGUgcG9pbnQsIG5vIGZha2luZw==",
-            "MDAwMDAzQ29va2luZyBNQydzIGxpa2UgYSBwb3VuZCBvZiBiYWNvbg==",
-            "MDAwMDA0QnVybmluZyAnZW0sIGlmIHlvdSBhaW4ndCBxdWljayBhbmQgbmltYmxl",
-            "MDAwMDA1SSBnbyBjcmF6eSB3aGVuIEkgaGVhciBhIGN5bWJhbA==",
-            "MDAwMDA2QW5kIGEgaGlnaCBoYXQgd2l0aCBhIHNvdXBlZCB1cCB0ZW1wbw==",
-            "MDAwMDA3SSdtIG9uIGEgcm9sbCwgaXQncyB0aW1lIHRvIGdvIHNvbG8=",
-            "MDAwMDA4b2xsaW4nIGluIG15IGZpdmUgcG9pbnQgb2g=",
-            "MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93",
-        ];
-
-        let selection = rand::thread_rng().gen_range(0..strings.len());
-        let selection = strings.get(selection).unwrap();
-
-        self.encrypt(&selection.as_bytes().to_vec())
-    }
-
     pub fn encrypt<T: Digest>(&self, message: &T) -> EncryptionResult {
         let prefix = "comment1=cooking%20MCs;userdata=".as_bytes();
         let suffix = ";comment2=%20like%20a%20pound%20of%20bacon".as_bytes();
@@ -61,12 +44,6 @@ impl CBCOracle {
             cipher_text: aes_cbc::encrypt(&message, &self.key, &self.iv),
             iv: self.iv,
         }
-    }
-
-    pub fn is_padding_valid(&self, cipher_text: &[u8]) -> bool {
-        let message = aes_cbc::decrypt(cipher_text, &self.key, &self.iv);
-        let unpadded = try_unpad(&message, 16);
-        unpadded.is_ok()
     }
 
     pub fn is_admin(&self, cipher_text: &[u8]) -> bool {

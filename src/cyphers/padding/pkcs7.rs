@@ -20,9 +20,15 @@ pub fn try_unpad(plain_text: &[u8], block_length: usize) -> Result<Vec<u8>, Erro
     let last_byte = *plain_text.last().unwrap();
 
     if last_byte as usize > block_length {
-        return Err(Box::new(PaddingError::InvalidPadding(format!(
-            "last byte greater than maximum padding"
-        ))));
+        return Err(Box::new(PaddingError::InvalidPadding(
+            "last byte greater than maximum padding".to_string(),
+        )));
+    }
+
+    if last_byte == 0 {
+        return Err(Box::new(PaddingError::InvalidPadding(
+            "last byte 0".to_string(),
+        )));
     }
 
     let mut result = plain_text.to_vec();

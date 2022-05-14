@@ -1,3 +1,5 @@
+use cryptopals::cyphers::oracles::padding_oracle::{PaddingOracle, SamplePaddingOracle};
+
 pub fn run() {
     print!("Starting Challenge Seventeen... ");
     challenge_seventeen();
@@ -34,7 +36,12 @@ pub fn run() {
 
 /// https://cryptopals.com/sets/3/challenges/17
 fn challenge_seventeen() {
-    assert!(false);
+    for _ in 0..=50 {
+        let oracle = SamplePaddingOracle::new();
+        let encryption = oracle.encrypt_rand();
+        let decrypted = oracle.decrypt(&encryption);
+        println!("result: {}", String::from_utf8_lossy(&decrypted));
+    }
 }
 
 fn challenge_eighteen() {
