@@ -1,10 +1,4 @@
-use std::str::FromStr;
-
-use rand::Rng;
-
-use crate::cyphers::padding::pkcs7::try_unpad;
 use crate::cyphers::{aes_cbc, aes_ecb};
-use crate::encoding::base64::Base64;
 use crate::encoding::Digest;
 
 pub struct CBCOracle {
