@@ -1,10 +1,9 @@
+use rand::Rng;
 use std::str::FromStr;
 
-use rand::Rng;
-
-use crate::cyphers::oracles::cbc_oracle::EncryptionResult;
+use crate::cyphers::aes::oracles::cbc_oracle::EncryptionResult;
+use crate::cyphers::aes::{self, cbc};
 use crate::cyphers::padding::pkcs7;
-use crate::cyphers::{aes_cbc, aes_ecb};
 use crate::encoding::base64::Base64;
 use crate::encoding::Digest;
 
@@ -95,7 +94,7 @@ pub struct SamplePaddingOracle {
 
 impl PaddingOracle for SamplePaddingOracle {
     fn is_valid_padding(&self, message: &EncryptionResult) -> bool {
-        let message = aes_cbc::decrypt(&message.cipher_text, &self.key, &message.iv);
+        let message = cbc::decrypt(&message.cipher_text, &self.key, &message.iv);
         let unpadded = pkcs7::try_unpad(&message, self.key.len());
         unpadded.is_ok()
     }
@@ -103,7 +102,7 @@ impl PaddingOracle for SamplePaddingOracle {
 
 impl Default for SamplePaddingOracle {
     fn default() -> Self {
-        let key = aes_ecb::generate_key();
+        let key = aes::generate_key();
         SamplePaddingOracle { key }
     }
 }
@@ -131,10 +130,10 @@ impl SamplePaddingOracle {
             .get(rand::thread_rng().gen_range(0..strings.len()))
             .unwrap();
         let decoded = Base64::from_str(selection).unwrap();
-        let iv = aes_ecb::generate_key();
+        let iv = aes::generate_key();
 
         EncryptionResult {
-            cipher_text: aes_cbc::encrypt(decoded.bytes(), &self.key, &iv),
+            cipher_text: cbc::encrypt(decoded.bytes(), &self.key, &iv),
             iv,
         }
     }

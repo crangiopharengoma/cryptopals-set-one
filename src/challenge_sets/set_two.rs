@@ -1,8 +1,11 @@
-use cryptopals::cyphers::oracles::cbc_oracle::CBCOracle;
-use cryptopals::cyphers::oracles::ecb_oracle;
-use cryptopals::cyphers::oracles::ecb_oracle::{BasicECBOracle, ECBOracle, RandomPrefixECBOracle};
+use cryptopals::cyphers::aes::cbc;
+use cryptopals::cyphers::aes::oracles::cbc_oracle::CBCOracle;
+use cryptopals::cyphers::aes::oracles::ecb_oracle;
+use cryptopals::cyphers::aes::oracles::ecb_oracle::{
+    BasicECBOracle, ECBOracle, RandomPrefixECBOracle,
+};
+use cryptopals::cyphers::aes::AesMode;
 use cryptopals::cyphers::padding::pkcs7;
-use cryptopals::cyphers::{aes_cbc, AesMode};
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
 use cryptopals::profile::{Profile, ProfileEncrypter};
@@ -56,7 +59,7 @@ fn challenge_nine() {
 fn challenge_ten() {
     let encrypted_message = Base64::from_file("10.txt").unwrap();
 
-    let decrypted_message = aes_cbc::decrypt(
+    let decrypted_message = cbc::decrypt(
         encrypted_message.bytes(),
         "YELLOW SUBMARINE".as_bytes(),
         &[0b0; 16][..],

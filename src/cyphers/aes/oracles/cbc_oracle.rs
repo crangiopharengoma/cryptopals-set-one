@@ -1,4 +1,5 @@
-use crate::cyphers::{aes_cbc, aes_ecb};
+use crate::cyphers::aes;
+use crate::cyphers::aes::cbc;
 use crate::encoding::Digest;
 
 pub struct CBCOracle {
@@ -13,8 +14,8 @@ pub struct EncryptionResult {
 
 impl Default for CBCOracle {
     fn default() -> Self {
-        let key = aes_ecb::generate_key();
-        let iv = aes_ecb::generate_key();
+        let key = aes::generate_key();
+        let iv = aes::generate_key();
         Self { key, iv }
     }
 }
@@ -35,13 +36,13 @@ impl CBCOracle {
         let message = [prefix, message.as_bytes(), suffix].concat();
 
         EncryptionResult {
-            cipher_text: aes_cbc::encrypt(&message, &self.key, &self.iv),
+            cipher_text: cbc::encrypt(&message, &self.key, &self.iv),
             iv: self.iv,
         }
     }
 
     pub fn is_admin(&self, cipher_text: &[u8]) -> bool {
-        let plain_text = aes_cbc::decrypt(cipher_text, &self.key, &self.iv);
+        let plain_text = cbc::decrypt(cipher_text, &self.key, &self.iv);
         // checking for valid utf-8 will cause the attack in challenge 16 to most of the time
         let message = String::from_utf8_lossy(&plain_text);
         message.contains(";admin=true;")
@@ -55,8 +56,8 @@ impl CBCOracle {
 
 #[cfg(test)]
 mod tests {
-    use crate::cyphers::aes_cbc;
-    use crate::cyphers::oracles::cbc_oracle::CBCOracle;
+    use crate::cyphers::aes::cbc;
+    use crate::cyphers::aes::oracles::cbc_oracle::CBCOracle;
 
     #[test]
     fn encrypt_correctly_sanitises_text() {
@@ -70,7 +71,7 @@ mod tests {
     #[test]
     fn cipher_text_contains_admin() {
         let oracle = CBCOracle::new();
-        let encrypted = aes_cbc::encrypt(";admin=true;".as_bytes(), &oracle.key, &oracle.iv);
+        let encrypted = cbc::encrypt(";admin=true;".as_bytes(), &oracle.key, &oracle.iv);
 
         let is_admin = oracle.is_admin(&encrypted);
         assert!(is_admin);

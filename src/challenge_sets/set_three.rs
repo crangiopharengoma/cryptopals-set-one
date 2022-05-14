@@ -1,4 +1,4 @@
-use cryptopals::cyphers::oracles::padding_oracle::{PaddingOracle, SamplePaddingOracle};
+use cryptopals::cyphers::aes::oracles::padding_oracle::{PaddingOracle, SamplePaddingOracle};
 
 pub fn run() {
     print!("Starting Challenge Seventeen... ");

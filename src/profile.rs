@@ -2,7 +2,7 @@ use std::error::Error as stdError;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use crate::cyphers::aes_ecb;
+use crate::cyphers::aes::{self, ecb};
 use crate::encoding::structured_cookie::StructuredCookie;
 use crate::profile::ProfileErrors::MissingValue;
 use crate::Error;
@@ -26,7 +26,7 @@ pub struct ProfileEncrypter {
 
 impl Default for ProfileEncrypter {
     fn default() -> Self {
-        let key = aes_ecb::generate_key();
+        let key = aes::generate_key();
         ProfileEncrypter { key }
     }
 }
@@ -38,11 +38,11 @@ impl ProfileEncrypter {
 
     pub fn encrypt(&self, profile: &Profile) -> Vec<u8> {
         let structured_cookie: StructuredCookie = profile.into();
-        aes_ecb::encrypt(&self.key, structured_cookie.to_string().into_bytes())
+        ecb::encrypt(&self.key, structured_cookie.to_string().into_bytes())
     }
 
     pub fn decrypt(&self, cipher_text: &[u8]) -> Profile {
-        let plain_text = aes_ecb::decrypt(&self.key, cipher_text.to_vec());
+        let plain_text = ecb::decrypt(&self.key, cipher_text.to_vec());
         StructuredCookie::from_str(&String::from_utf8(plain_text).unwrap())
             .unwrap()
             .try_into()

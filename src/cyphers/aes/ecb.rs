@@ -1,15 +1,9 @@
 use openssl::error::ErrorStack;
+use openssl::symm;
 use openssl::symm::{Cipher, Crypter, Mode};
-use openssl::{rand, symm};
 
 use crate::cyphers::padding::pkcs7;
 use crate::encoding::Digest;
-
-pub fn generate_key() -> [u8; 16] {
-    let mut key = [0; 16];
-    rand::rand_bytes(&mut key).expect("key generation failed");
-    key
-}
 
 /// Uses a given key to decrypt a given message digest
 ///

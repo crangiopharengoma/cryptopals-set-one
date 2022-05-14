@@ -1,11 +1,10 @@
+use openssl::rand as ssl_rand;
+use rand::Rng;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use openssl::rand as ssl_rand;
-use rand::Rng;
-
-use crate::cyphers::AesMode;
-use crate::cyphers::{aes_cbc, aes_ecb};
+use crate::cyphers::aes::AesMode;
+use crate::cyphers::aes::{self, cbc, ecb};
 use crate::encoding::base64::Base64;
 use crate::encoding::Digest;
 
@@ -174,7 +173,7 @@ pub struct RandomPrefixECBOracle {
 
 impl Default for RandomPrefixECBOracle {
     fn default() -> Self {
-        let key = aes_ecb::generate_key();
+        let key = aes::generate_key();
 
         let prefix_length = rand::thread_rng().gen_range(1..=255);
         let mut prefix = vec![0; prefix_length];
@@ -195,7 +194,7 @@ impl Default for RandomPrefixECBOracle {
 impl ECBOracle for RandomPrefixECBOracle {
     fn encrypt<T: Digest>(&self, message: T) -> Vec<u8> {
         let message = [&self.prefix, message.bytes(), self.suffix.bytes()].concat();
-        aes_ecb::encrypt(&self.key, message)
+        ecb::encrypt(&self.key, message)
     }
 }
 
@@ -212,7 +211,7 @@ pub struct BasicECBOracle {
 impl Default for BasicECBOracle {
     /// Returns a new ECBOracle with a randomly generated 128 bit key
     fn default() -> Self {
-        let key = aes_ecb::generate_key();
+        let key = aes::generate_key();
         BasicECBOracle { key }
     }
 }
@@ -226,7 +225,7 @@ impl ECBOracle for BasicECBOracle {
         ).unwrap();
 
         let final_message = [message.bytes(), suffix.bytes()].concat();
-        aes_ecb::encrypt(&self.key, final_message)
+        ecb::encrypt(&self.key, final_message)
     }
 }
 
@@ -241,16 +240,16 @@ impl BasicECBOracle {
 ///
 /// Randomly uses either aes_cbc or aes_ecb; if cbc randomly generates a 128 bit iv
 pub fn encrypt<T: Digest>(message: T) -> Vec<u8> {
-    let key = aes_ecb::generate_key();
+    let key = aes::generate_key();
 
     let plain_text = surround_with_random_bytes(message);
 
     if rand::thread_rng().gen_bool(0.50) {
-        aes_ecb::encrypt(&key, plain_text)
+        ecb::encrypt(&key, plain_text)
     } else {
         // a key is 16 random bytes; an IV is the same
-        let iv = aes_ecb::generate_key();
-        aes_cbc::encrypt(&plain_text, &key, &iv)
+        let iv = aes::generate_key();
+        cbc::encrypt(&plain_text, &key, &iv)
     }
 }
 
@@ -290,7 +289,9 @@ pub fn detect_aes_ecb<T: Digest>(encrypted_message: T) -> bool {
 mod test {
     use std::str::FromStr;
 
-    use crate::cyphers::oracles::ecb_oracle::{BasicECBOracle, ECBOracle, RandomPrefixECBOracle};
+    use crate::cyphers::aes::oracles::ecb_oracle::{
+        BasicECBOracle, ECBOracle, RandomPrefixECBOracle,
+    };
     use crate::encoding::base64::Base64;
     use crate::encoding::Digest;
 
