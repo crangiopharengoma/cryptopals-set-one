@@ -43,10 +43,6 @@ impl FromStr for Base64 {
 }
 
 impl Base64 {
-    // pub fn raw_bytes(&self) -> &[u8] {
-    //     &self.bytes
-    // }
-
     pub fn new(bytes: &[u8]) -> Base64 {
         let bytes = bytes.to_vec();
         Base64 { bytes }
@@ -72,6 +68,29 @@ impl Base64 {
         let base64_string = file_contents.lines().collect::<Vec<&str>>().join("");
 
         Base64::from_str(&base64_string)
+    }
+
+    /// Tries to create a Vec<Base64> from a file
+    ///
+    /// Assumptions:
+    /// The file contains only the base64 encoded chars and linebreaks.
+    /// Linebreaks always signify the end of Base64 encoded string - there cannot be multi-line encodings.
+    /// Note that this may not be detected;
+    /// if the line break splits a Base64 into two valid base64s this method will return Ok
+    ///
+    /// Errors
+    /// If file can't be opened/read
+    /// If file contains invalid base64 chars
+    /// If file contains multi-line encodings resulting in an invalid base64 encoding on a single line
+    pub fn from_file_multi(path: &str) -> Result<Vec<Base64>, Error> {
+        let file_contents = fs::read_to_string(path)?;
+
+        let mut result = Vec::with_capacity(file_contents.lines().count());
+        for line in file_contents.lines() {
+            result.push(Base64::from_str(line)?);
+        }
+
+        Ok(result)
     }
 
     /// Takes a slice of raw bytes and converts into base64 encoded bytes
