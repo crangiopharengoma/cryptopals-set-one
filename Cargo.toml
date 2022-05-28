@@ -2,9 +2,20 @@
 name = "cryptopals"
 version = "0.1.0"
 edition = "2021"
+default-run = "cryptopals"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "ctr-cracker"
+path = "src/bin/ctr_cracker/ctr_cracker.rs"
+
+[[bin]]
+name = "cryptopals"
+path = "src/main.rs"
 
 [dependencies]
 openssl = "0.10.38"
 rand = "0.8.3"
+crossterm = { version = "0.23", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+tui = { version = "0.18", default-features = false, features = ['crossterm', 'serde'] }

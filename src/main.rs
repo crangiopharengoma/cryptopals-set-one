@@ -6,13 +6,15 @@ use crate::challenge_sets::set_three;
 mod challenge_sets;
 
 fn main() {
-    println!("Starting cryptopals challenges!");
-    set_one::run();
-    println!("Set one completed!");
+    if false {
+        println!("Starting cryptopals challenges!");
+        set_one::run();
+        println!("Set one completed!");
 
-    println!("Start set two!");
-    set_two::run();
-    println!("Set three completed!");
+        println!("Start set two!");
+        set_two::run();
+        println!("Set three completed!");
+    }
 
     println!("Starting set three!");
     set_three::run();

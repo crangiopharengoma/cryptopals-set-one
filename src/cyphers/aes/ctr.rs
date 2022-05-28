@@ -2,7 +2,7 @@ use crate::cyphers::aes::{ecb, get_random_bytes};
 use crate::encoding::base64::Base64;
 use crate::encoding::Digest;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EncryptedMessage {
     pub cipher_text: Vec<u8>,
     pub nonce: Vec<u8>,
