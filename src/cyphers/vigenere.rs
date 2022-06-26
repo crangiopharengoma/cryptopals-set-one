@@ -15,6 +15,10 @@ pub fn decrypt<T: Digest>(message: T, key: &[u8]) -> Vec<u8> {
     encrypt(message, key)
 }
 
+/// Attempts to break a digest encrypted using repeating key xor encryption
+///
+/// This uses an averaged hamming distance to guess key length.
+/// The maximum key length it will search for is 50 bytes.
 pub fn break_encryption<T: Digest>(encrypted_message: T) -> Vec<u8> {
     let max_key_length = if encrypted_message.len() > 200 {
         50
@@ -26,6 +30,15 @@ pub fn break_encryption<T: Digest>(encrypted_message: T) -> Vec<u8> {
         .min_by_key(|key_size| encrypted_message.normalized_edit_distance(key_size))
         .unwrap();
 
+    let key = brute_force_key(&encrypted_message, key_size);
+
+    decrypt(encrypted_message, &key)
+}
+
+/// For a given key size will attempt to find the most likely key based on English letter frequency analysis
+///
+/// If the key length is not known already, use vigenere::break_encryption instead
+pub fn brute_force_key<T: Digest>(encrypted_message: &T, key_size: usize) -> Vec<u8> {
     let key: Vec<u8> = (0..key_size)
         .map(|i| {
             caesar_cypher::find_key(
@@ -38,8 +51,7 @@ pub fn break_encryption<T: Digest>(encrypted_message: T) -> Vec<u8> {
             .expect("key brute force failed")
         })
         .collect();
-
-    decrypt(encrypted_message, &key)
+    key
 }
 
 #[cfg(test)]

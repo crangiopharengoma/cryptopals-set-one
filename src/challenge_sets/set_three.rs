@@ -3,6 +3,7 @@ use std::str::FromStr;
 use cryptopals::cyphers::aes::ctr;
 use cryptopals::cyphers::aes::ctr::EncryptedMessage;
 use cryptopals::cyphers::aes::oracles::padding_oracle::{PaddingOracle, SamplePaddingOracle};
+use cryptopals::cyphers::vigenere;
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
 
@@ -76,7 +77,37 @@ fn challenge_nineteen() {
 }
 
 fn challenge_twenty() {
-    assert!(false);
+    let source_base64 = Base64::from_file_multi("20.txt").expect("failed to load file");
+    let min_len = source_base64
+        .iter()
+        .min_by_key(|base64| base64.len())
+        .expect("no min length found")
+        .len();
+
+    println!("minimum length is: {min_len}");
+
+    let cipher_texts: Vec<u8> = source_base64
+        .into_iter()
+        .flat_map(|mut base64| {
+            base64.truncate(min_len);
+            base64.bytes().to_vec()
+        })
+        .collect();
+
+    let key = vigenere::brute_force_key(&cipher_texts, min_len);
+
+    // Should really clone above rather than moving it into the iterator, but a trait bound is not met for
+    // Vec<Base64> for the purposes of this it's reasonably to just re-read the file
+    let source_base64 = Base64::from_file_multi("20.txt").expect("failed to load file");
+
+    let plain_texts: Vec<String> = source_base64
+        .into_iter()
+        .map(|mut base64| {
+            base64.truncate(min_len);
+            let decrypted = vigenere::decrypt(base64, &key);
+            String::from_utf8_lossy(&decrypted).to_string()
+        })
+        .collect();
 }
 
 fn challenge_twenty_one() {

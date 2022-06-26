@@ -131,6 +131,19 @@ impl Base64 {
         result
     }
 
+    /// Truncates to the supplied length of bytes (not utf-8 chars or graphemes)
+    ///
+    /// If the supplied len is greater than the current len then this method will do nothing
+    ///
+    /// This is non-reversible - truncated bytes are lost forever!
+    pub fn truncate(&mut self, len: usize) {
+        if len > self.len() {
+            return;
+        }
+
+        self.bytes.truncate(len);
+    }
+
     fn string_from_encoded_bytes(
         result: &mut String,
         raw_byte_length: usize,
