@@ -84,9 +84,8 @@ fn challenge_twenty() {
         .expect("no min length found")
         .len();
 
-    println!("minimum length is: {min_len}");
-
     let cipher_texts: Vec<u8> = source_base64
+        .clone()
         .into_iter()
         .flat_map(|mut base64| {
             base64.truncate(min_len);
@@ -96,18 +95,19 @@ fn challenge_twenty() {
 
     let key = vigenere::brute_force_key(&cipher_texts, min_len);
 
-    // Should really clone above rather than moving it into the iterator, but a trait bound is not met for
-    // Vec<Base64> for the purposes of this it's reasonably to just re-read the file
-    let source_base64 = Base64::from_file_multi("20.txt").expect("failed to load file");
-
+    // removing the truncation should result in errors after min_len chars
+    // In this case it doesn't seem to - I don't understand why yet
     let plain_texts: Vec<String> = source_base64
         .into_iter()
-        .map(|mut base64| {
-            base64.truncate(min_len);
+        .map(|base64| {
             let decrypted = vigenere::decrypt(base64, &key);
-            String::from_utf8_lossy(&decrypted).to_string()
+            String::from_utf8(decrypted)
+                .expect("invalid utf-8 found")
+                .to_string()
         })
         .collect();
+
+    println!("plain_texts: {:#?}", plain_texts);
 }
 
 fn challenge_twenty_one() {

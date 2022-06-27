@@ -6,6 +6,7 @@ use crate::encoding::hex::Hex;
 use crate::encoding::Digest;
 use crate::Error;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Base64 {
     bytes: Vec<u8>,
 }
