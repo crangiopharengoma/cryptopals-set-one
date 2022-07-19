@@ -53,8 +53,8 @@ impl CTRSampleEncryptions {
         encrypt(plain_text, &self.key, &nonce)
     }
 
-    pub fn encrypt_messages(&self) -> Vec<EncryptedMessage> {
-        let messages = Base64::from_file_multi("18.txt").unwrap();
+    pub fn encrypt_messages(&self, file_path: &str) -> Vec<EncryptedMessage> {
+        let messages = Base64::from_file_multi(file_path).unwrap();
         let nonce: u64 = 0;
         let nonce = nonce.to_le_bytes();
         messages

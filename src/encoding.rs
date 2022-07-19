@@ -36,7 +36,12 @@ pub trait Digest {
     }
 
     /// Scores how likely this Digest is to some valid English text
+    /// Assumes that the correct digest will always be valid utf8
     fn english_score(&self) -> usize {
+        if String::from_utf8(self.bytes().to_vec()).is_err() {
+            return 0;
+        }
+
         self.bytes()
             .iter()
             .fold(0, |score, x| score + score_char(*x))
@@ -124,23 +129,20 @@ fn hamming_distance(string_one: &[u8], string_two: &[u8]) -> usize {
 
 /// Uses inverted scrabble scoring to calculate the approximate frequency of letters
 fn score_char(byte: u8) -> usize {
+    // score invalid ascii and control characters as 0
+    if !(32..=127).contains(&byte) {
+        return 0;
+    }
     let char = char::from(byte);
-    match char {
-        'a' | 'e' | 'i' | 'l' | 'n' | 'o' | 'r' | 's' | 't' | 'u' => 10,
-        'A' | 'E' | 'I' | 'L' | 'N' | 'O' | 'R' | 'S' | 'T' | 'U' => 9,
-        'd' | 'g' => 8,
-        'D' | 'G' => 7,
-        'b' | 'c' | 'm' | 'p' | ' ' => 5,
-        'B' | 'C' | 'M' | 'P' => 4,
-        'f' | 'h' | 'v' | 'w' | 'y' => 4,
-        'F' | 'H' | 'V' | 'W' | 'Y' => 3,
-        'k' => 3,
-        'K' => 2,
-        'j' | 'x' => 2,
-        'J' | 'X' => 2,
-        'q' | 'z' => 1,
-        // Q and Z omitted
-        _ => 0,
+    match char.to_ascii_lowercase() {
+        'a' | 'e' | 'i' | 'l' | 'n' | 'o' | 'r' | 's' | 't' | 'u' => 12,
+        'd' | 'g' => 10,
+        'b' | 'c' | 'm' | 'p' | ' ' => 7,
+        'f' | 'h' | 'v' | 'w' | 'y' => 6,
+        'k' => 5,
+        'j' | 'x' => 4,
+        'q' | 'z' => 3,
+        _ => 1,
     }
 }
 
@@ -157,7 +159,7 @@ mod test {
         let phrase: Vec<u8> = "The quick brown fox jumps over the lazy dog. Oh yeah!"
             .as_bytes()
             .to_vec();
-        let expected_score = 339;
+        let expected_score = 445;
 
         let calculated_score = phrase.english_score();
 

@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use cryptopals::cyphers::aes::ctr;
-use cryptopals::cyphers::aes::ctr::EncryptedMessage;
+use cryptopals::cyphers::aes::ctr::{CTRSampleEncryptions, EncryptedMessage};
 use cryptopals::cyphers::aes::oracles::padding_oracle::{PaddingOracle, SamplePaddingOracle};
 use cryptopals::cyphers::vigenere;
 use cryptopals::encoding::base64::Base64;
@@ -78,29 +78,32 @@ fn challenge_nineteen() {
 
 fn challenge_twenty() {
     let source_base64 = Base64::from_file_multi("20.txt").expect("failed to load file");
+
     let min_len = source_base64
         .iter()
         .min_by_key(|base64| base64.len())
         .expect("no min length found")
         .len();
 
-    let cipher_texts: Vec<u8> = source_base64
+    let encrypter = CTRSampleEncryptions::new();
+    let encrypted_messages = encrypter.encrypt_messages("20.txt");
+
+    let cipher_text: Vec<u8> = encrypted_messages
         .clone()
         .into_iter()
-        .flat_map(|mut base64| {
-            base64.truncate(min_len);
-            base64.bytes().to_vec()
+        .flat_map(|mut cipher_text| {
+            cipher_text.cipher_text.truncate(min_len);
+            cipher_text.cipher_text
         })
         .collect();
 
-    let key = vigenere::brute_force_key(&cipher_texts, min_len);
+    let key = vigenere::brute_force_key(&cipher_text, min_len);
 
-    // removing the truncation should result in errors after min_len chars
-    // In this case it doesn't seem to - I don't understand why yet
-    let plain_texts: Vec<String> = source_base64
+    let plain_texts: Vec<String> = encrypted_messages
         .into_iter()
-        .map(|base64| {
-            let decrypted = vigenere::decrypt(base64, &key);
+        .map(|mut encrypted_message| {
+            encrypted_message.cipher_text.truncate(min_len);
+            let decrypted = vigenere::decrypt(encrypted_message.cipher_text, &key);
             String::from_utf8(decrypted)
                 .expect("invalid utf-8 found")
                 .to_string()
