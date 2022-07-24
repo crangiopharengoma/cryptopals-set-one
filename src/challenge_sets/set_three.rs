@@ -1,5 +1,8 @@
 use std::str::FromStr;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use rand::Rng;
 
 use cryptopals::cyphers::aes::ctr;
 use cryptopals::cyphers::aes::ctr::{CTRSampleEncryptions, EncryptedMessage};
@@ -132,6 +135,39 @@ fn challenge_twenty_one() {
 }
 
 fn challenge_twenty_two() {
+    let secs = rand::thread_rng().gen_range(40..=1000);
+    thread::sleep(Duration::from_secs(secs));
+
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+    let mt = MersenneTwister::new(seed as u32);
+    let first_num = mt.extract_number();
+
+    let secs = rand::thread_rng().gen_range(40..=1000);
+    thread::sleep(Duration::from_secs(secs));
+
+    // println!("The number is: {first_num}");
+
+    let timestamp_now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u32;
+
+    for offset in 0..=2_000_000 {
+        let potential_timestamp = timestamp_now - offset;
+        // println!("testing {potential_timestamp} seeking {}", seed as u32);
+        let mt = MersenneTwister::new(potential_timestamp);
+        let test_num = mt.extract_number();
+        if first_num == test_num {
+            println!("The seed was: {potential_timestamp}!");
+            // lets prove that I got this right...
+            assert_eq!(seed as u32, potential_timestamp);
+            return;
+        }
+    }
+
     assert!(false);
 }
 

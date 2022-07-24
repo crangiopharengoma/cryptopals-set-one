@@ -16,7 +16,7 @@ const INITIALISATION_FACTOR: u128 = 1812433253;
 
 // w: word size (in number of bits)
 const WORD_SIZE: u128 = 32;
-const LOW_W_BITS: u128 = 0xFF;
+const LOW_W_BITS: u128 = 0xFFFF_FFFF;
 
 // n: degree of recurrence
 const DEGREE_OF_RECURRENCE: u128 = 624;
@@ -73,10 +73,12 @@ impl MersenneTwister {
         }
 
         let mut y: u128 = self.get_value(self.index.get() as usize) as u128;
+        // println!("pre-tempering value: {y}");
         y ^= (y >> U) & D;
         y ^= (y << S) & B;
         y ^= (y << T) & C;
         y ^= y >> L;
+        // println!("post-tempering value: {y}");
 
         self.index.replace(self.index.get() + 1);
 
@@ -98,6 +100,7 @@ impl MersenneTwister {
 
     fn twist(&self) {
         self.state.iter().enumerate().for_each(|(index, value)| {
+            // println!("pre twist value = {}", value.get());
             let other_index = (index + 1) % (DEGREE_OF_RECURRENCE as usize);
             let other_value = self.get_value(other_index) as u128;
             let x = ((value.get() as u128) & self.upper_mask.get())
@@ -108,6 +111,7 @@ impl MersenneTwister {
             }
             let third_index = (index + (MIDDLE_WORD as usize)) % (DEGREE_OF_RECURRENCE as usize);
             let third_value = self.get_value(third_index) as u128;
+            // println!("post twist value = {}", value.get());
             value.set((third_value ^ x_a) as u32)
         });
         self.index.set(0);
@@ -132,7 +136,7 @@ mod test {
         let mt = MersenneTwister::default();
         let random = mt.extract_number();
 
-        assert_eq!(202, random);
+        assert_eq!(3499211612, random);
     }
 
     #[test]
