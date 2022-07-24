@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use cryptopals::cyphers::aes::ctr;
 use cryptopals::cyphers::aes::ctr::{CTRSampleEncryptions, EncryptedMessage};
@@ -6,6 +7,7 @@ use cryptopals::cyphers::aes::oracles::padding_oracle::{PaddingOracle, SamplePad
 use cryptopals::cyphers::vigenere;
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
+use cryptopals::random::mersenne_twister::MersenneTwister;
 
 pub fn run() {
     print!("Starting Challenge Seventeen... ");
@@ -114,7 +116,19 @@ fn challenge_twenty() {
 }
 
 fn challenge_twenty_one() {
-    assert!(false);
+    let mt = MersenneTwister::default();
+    let mut numbers = Vec::new();
+    (0..=5).for_each(|_| numbers.push(mt.extract_number()));
+    println!("Here are some random numbers with the default seed: {numbers:?}");
+
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+    let mt = MersenneTwister::new(seed as u32);
+    let mut numbers = Vec::new();
+    (0..=5).for_each(|_| numbers.push(mt.extract_number()));
+    println!("Here are some random numbers with a seed derived from the system clock: {numbers:?}");
 }
 
 fn challenge_twenty_two() {

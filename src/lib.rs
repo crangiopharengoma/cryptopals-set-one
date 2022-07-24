@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 pub mod cyphers;
 pub mod encoding;
 pub mod profile;
+pub mod random;
 
 pub type Error = Box<dyn std::error::Error>;
 
