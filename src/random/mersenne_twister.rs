@@ -72,18 +72,41 @@ impl MersenneTwister {
             self.twist();
         }
 
-        let mut y: u128 = self.get_value(self.index.get() as usize) as u128;
-        // println!("pre-tempering value: {y}");
-        y ^= (y >> U) & D;
-        y ^= (y << S) & B;
-        y ^= (y << T) & C;
-        y ^= y >> L;
-        // println!("post-tempering value: {y}");
+        let y = MersenneTwister::temper(self.get_value(self.index.get() as usize));
 
         self.index.replace(self.index.get() + 1);
 
         // this guarantees that all bits apart from the last 32 are non-zero
         (LOW_W_BITS & y) as u32
+    }
+
+    pub fn splice(&mut self, history: Vec<u32>) {
+        self.state = history.into_iter().map(Cell::new).collect();
+    }
+
+    pub fn untemper(value: u32) -> u32 {
+        let mut y = value as u128;
+        y ^= y >> L;
+        y ^= (y << T) & C;
+        let mask = 0x7F;
+        for i in 0..4 {
+            let b = B & mask << (7 * (i + 1));
+            y ^= (y << S) & b;
+        }
+        for _ in 0..3 {
+            y ^= y >> U;
+        }
+
+        (LOW_W_BITS & y) as u32
+    }
+
+    fn temper(value: u32) -> u128 {
+        let mut y = value as u128;
+        y ^= (y >> U) & D;
+        y ^= (y << S) & B;
+        y ^= (y << T) & C;
+        y ^= y >> L;
+        y
     }
 
     fn seed(&mut self, seed: u32) {

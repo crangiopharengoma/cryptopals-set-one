@@ -30,11 +30,11 @@ pub fn run() {
     println!("Success!");
 
     print!("Starting Challenge Twenty-One... ");
-    challenge_twenty_one();
+    // challenge_twenty_one();
     println!("Success!");
 
     println!("Starting Challenge Twenty-Two... ");
-    challenge_twenty_two();
+    // challenge_twenty_two();
     println!("Success!");
 
     println!("Starting Challenge Twenty-Three... ");
@@ -172,7 +172,38 @@ fn challenge_twenty_two() {
 }
 
 fn challenge_twenty_three() {
-    assert!(false);
+    let mt = MersenneTwister::default();
+
+    // this will work regardless of how far through it's internal state is
+    for _ in 0..20 {
+        mt.extract_number();
+    }
+
+    let history = (0..624)
+        .map(|_| {
+            let number = mt.extract_number();
+            MersenneTwister::untemper(number)
+        })
+        .collect();
+
+    let mut spliced_mt = MersenneTwister::default();
+    spliced_mt.splice(history);
+
+    let actual_values: Vec<u32> = (0..624).map(|_| mt.extract_number()).collect();
+
+    let predicted_values: Vec<u32> = (0..624).map(|_| spliced_mt.extract_number()).collect();
+
+    actual_values
+        .into_iter()
+        .zip(predicted_values)
+        .for_each(|(actual, prediction)| {
+            if actual != prediction {
+                println!("Prediction error: expected {actual} found {prediction}");
+                assert!(false);
+            }
+        });
+
+    println!("All predictions correct");
 }
 
 fn challenge_twenty_four() {
