@@ -1,7 +1,7 @@
+use challenge_sets::set_four;
 use challenge_sets::set_one;
+use challenge_sets::set_three;
 use challenge_sets::set_two;
-
-use crate::challenge_sets::set_three;
 
 mod challenge_sets;
 
@@ -11,12 +11,16 @@ fn main() {
         set_one::run();
         println!("Set one completed!");
 
-        println!("Start set two!");
+        println!("Starting set two!");
         set_two::run();
         println!("Set three completed!");
 
         println!("Starting set three!");
         set_three::run();
-        println!("set four completed!");
+        println!("Set three completed!");
     }
+
+    println!("Starting set four!");
+    set_four::run();
+    println!("Set four completed!")
 }
