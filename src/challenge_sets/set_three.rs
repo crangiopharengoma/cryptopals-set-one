@@ -2,11 +2,13 @@ use std::str::FromStr;
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use openssl::rand as ssl_rand;
 use rand::Rng;
 
 use cryptopals::cyphers::aes::ctr;
 use cryptopals::cyphers::aes::ctr::{CTRSampleEncryptions, EncryptedMessage};
 use cryptopals::cyphers::aes::oracles::padding_oracle::{PaddingOracle, SamplePaddingOracle};
+use cryptopals::cyphers::mersenne_twister::Encrypter;
 use cryptopals::cyphers::vigenere;
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
@@ -30,11 +32,11 @@ pub fn run() {
     println!("Success!");
 
     print!("Starting Challenge Twenty-One... ");
-    // challenge_twenty_one();
+    challenge_twenty_one();
     println!("Success!");
 
     println!("Starting Challenge Twenty-Two... ");
-    // challenge_twenty_two();
+    challenge_twenty_two();
     println!("Success!");
 
     println!("Starting Challenge Twenty-Three... ");
@@ -207,5 +209,58 @@ fn challenge_twenty_three() {
 }
 
 fn challenge_twenty_four() {
+    let mt = MersenneTwister::from_timestamp();
+    let seed = mt.extract_number() as u16;
+    let mt_encrypter = Encrypter::new(seed);
+
+    let len = rand::thread_rng().gen_range(20..40);
+    let mut rand_bytes = [0; 40];
+    ssl_rand::rand_bytes(&mut rand_bytes).expect("ssl random_bytes() failed");
+    let message = {
+        let message = rand_bytes[..len].to_vec();
+        let message = String::from_utf8_lossy(&message);
+        let known_text = "A".repeat(14);
+        let mut message = message.to_string();
+        message.push_str(known_text.as_str());
+        message
+    };
+
+    let cipher_text = mt_encrypter.encrypt(message.as_bytes().to_vec());
+
+    for potential_seed in 0..=u16::MAX {
+        let mt_encrypter = Encrypter::new(potential_seed);
+        let message = mt_encrypter.decrypt(cipher_text.clone());
+        // This method assumes that the plain text being decrypted will always be valid utf-8
+        if let Ok(message) = String::from_utf8(message) {
+            let (unknown_text, known_text) = message.split_at(message.len() - 14);
+            if known_text == "A".repeat(14).as_str() {
+                println!("Seed was: {potential_seed}, unknown text is {unknown_text}");
+                assert_eq!(seed, potential_seed);
+                break;
+            }
+        }
+    }
+
+    let timestamp_now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u16;
+
+    let mt_encrypter = Encrypter::new(timestamp_now as u16);
+    let mt = MersenneTwister::new(timestamp_now.into());
+    let password_reset_token = mt_encrypter.encrypt(mt.extract_number().to_be_bytes().as_slice());
+
+    for offset in 0..=u16::MAX {
+        let potential_seed = timestamp_now - offset;
+        let mt_encrypter = Encrypter::new(potential_seed);
+        let mt = MersenneTwister::new(potential_seed.into());
+        let potential_token = mt_encrypter.encrypt(mt.extract_number().to_be_bytes().as_slice());
+        if potential_token == password_reset_token {
+            println!("Password reset token encrypted by MT19937 stream cipher");
+            assert_eq!(timestamp_now, potential_seed);
+            return;
+        }
+    }
+    // if we get here we've failed
     assert!(false);
 }

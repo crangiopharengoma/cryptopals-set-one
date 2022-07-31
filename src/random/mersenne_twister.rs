@@ -1,6 +1,7 @@
 //! An implementation of the MT19937 Mersenne Twister RNG
 //! Based on the pseudo code found here: https://en.wikipedia.org/wiki/Mersenne_Twister#Pseudocode
 use std::cell::Cell;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// An implementation of the MT19937 Mersenne Twister RNG
 /// Based on the pseudo code found here: https://en.wikipedia.org/wiki/Mersenne_Twister#Pseudocode
@@ -51,6 +52,19 @@ impl Default for MersenneTwister {
 }
 
 impl MersenneTwister {
+    /// Generates a new twister based on the current time stamp (based on the unix epoch
+    /// Since this uses a 32 bit seed, this will result in a loss of precision after 7 Feb 2106
+    ///
+    /// Panics:
+    /// If SystemTime is unable to get the duration since the beginning of the Unix Epoch
+    pub fn from_timestamp() -> Self {
+        let seed = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+        MersenneTwister::new(seed as u32)
+    }
+
     pub fn new(seed: u32) -> Self {
         let state = Vec::with_capacity(WORD_SIZE as usize);
         let index = Cell::new(DEGREE_OF_RECURRENCE + 1);

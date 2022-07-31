@@ -14,9 +14,9 @@ fn main() {
         println!("Start set two!");
         set_two::run();
         println!("Set three completed!");
-    }
 
-    println!("Starting set three!");
-    set_three::run();
-    println!("set four completed!");
+        println!("Starting set three!");
+        set_three::run();
+        println!("set four completed!");
+    }
 }

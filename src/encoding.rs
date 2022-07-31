@@ -18,6 +18,12 @@ impl Digest for &Vec<u8> {
     }
 }
 
+impl Digest for &[u8] {
+    fn bytes(&self) -> &[u8] {
+        self
+    }
+}
+
 /// A Digest represents a sequence of bytes that contain some message
 ///
 /// No assumptions are made about the encoding of the message,
