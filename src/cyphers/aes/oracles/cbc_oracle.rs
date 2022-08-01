@@ -43,7 +43,7 @@ impl CBCOracle {
 
     pub fn is_admin(&self, cipher_text: &[u8]) -> bool {
         let plain_text = cbc::decrypt(cipher_text, &self.key, &self.iv);
-        // checking for valid utf-8 will cause the attack in challenge 16 to most of the time
+        // checking for valid utf-8 will cause the attack in challenge 16 to fail most of the time
         let message = String::from_utf8_lossy(&plain_text);
         message.contains(";admin=true;")
         // if let Ok(message) = String::from_utf8(plain_text) {

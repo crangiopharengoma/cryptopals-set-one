@@ -97,6 +97,33 @@ impl CTRSampleEncryptions {
         }
     }
 
+    /// Used in challenge 26 - appends/prepends some meta data and then some user controlled input
+    ///
+    /// Technically this should quote out or otherwise escape ';' and '=' chars but I haven't done that here
+    /// See cbc_oracle::CBCOracle::encrypt for example implementation
+    pub fn bit_flip_demo(&self, user_input: &[u8]) -> EncryptedMessage {
+        let prefix = "comment1=cooking%20MCs;userdata=".as_bytes();
+        let suffix = ";comment2=%20like%20a%20pound%20of%20bacon".as_bytes();
+
+        let message =
+            String::from_utf8(user_input.bytes().to_vec()).expect("message is not valid utf8");
+        let message = message.replace('=', "\"=\"").replace(';', "\";\"");
+
+        let full_message = [prefix, message.as_bytes(), suffix].concat();
+
+        self.encrypt(&full_message)
+    }
+
+    /// Checks if the returned string should be given administrator privileges
+    ///
+    /// This is defined as the string contains ";admin=true;";
+    pub fn bit_flip_success(&self, cipher_text: EncryptedMessage) -> bool {
+        let plain_text = self.decrypt(cipher_text);
+        // checking for valid utf-8 will cause this attack to fail most of the time
+        let message = String::from_utf8_lossy(&plain_text);
+        message.contains(";admin=true;")
+    }
+
     pub fn encrypt_messages_with_fixed_nonce(&self, file_path: &str) -> Vec<EncryptedMessage> {
         let messages = Base64::from_file_multi(file_path).unwrap();
         messages
