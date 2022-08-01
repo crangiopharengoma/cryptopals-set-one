@@ -67,7 +67,6 @@ fn challenge_eighteen() {
     .bytes()
     .to_vec();
     let nonce: u64 = 0;
-    let nonce = nonce.to_le_bytes().to_vec();
     let key = "YELLOW SUBMARINE".as_bytes();
 
     let encrypted = EncryptedMessage { cipher_text, nonce };
@@ -93,7 +92,7 @@ fn challenge_twenty() {
         .len();
 
     let encrypter = CTRSampleEncryptions::new();
-    let encrypted_messages = encrypter.encrypt_messages("20.txt");
+    let encrypted_messages = encrypter.encrypt_messages_with_fixed_nonce("20.txt");
 
     let cipher_text: Vec<u8> = encrypted_messages
         .clone()

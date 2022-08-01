@@ -14,7 +14,7 @@ pub struct CipherTextListModel {
 impl Default for CipherTextListModel {
     fn default() -> Self {
         let encrypter = CTRSampleEncryptions::new();
-        let cipher_texts = encrypter.encrypt_messages("18.txt");
+        let cipher_texts = encrypter.encrypt_messages_with_fixed_nonce("18.txt");
         let decryption_progress = DecryptionProgress::new(cipher_texts);
 
         let mut state = ListState::default();
