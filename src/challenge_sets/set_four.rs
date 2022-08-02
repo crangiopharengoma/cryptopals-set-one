@@ -2,6 +2,7 @@ use openssl::symm;
 use openssl::symm::Cipher;
 
 use cryptopals::cyphers::aes::ctr::CTRSampleEncryptions;
+use cryptopals::cyphers::aes::oracles::cbc_oracle::CBCOracle;
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
 
@@ -96,7 +97,37 @@ pub fn challenge_twenty_six() {
 }
 
 pub fn challenge_twenty_seven() {
-    assert!(false);
+    let cbc_encrypter = CBCOracle::new();
+    let message = "One block length".repeat(3);
+    let mut cipher_text = cbc_encrypter.encrypt_key_is_iv(&message.as_bytes());
+
+    let (block_one, _) = cipher_text.cipher_text.split_at(16);
+
+    // strictly this should (probably) fail due invalid padding (since we don't know block_one ends with valid padding)
+    // the cbc_oracle here doesn't check for valid padding (or strip it) because the padding_oracle::PaddingOracle demonstrates this
+    let altered_text = [block_one, [0; 16].as_slice(), block_one].concat();
+    cipher_text.cipher_text = altered_text;
+
+    let result = cbc_encrypter.decrypt_and_validate(&cipher_text);
+
+    let decrypted_key: Vec<u8> = match result {
+        Ok(()) => {
+            println!("Not an error");
+            Vec::new()
+        }
+        Err(text) => {
+            let (block_one, rest) = text.split_at(16);
+            let (_, block_three) = rest.split_at(16);
+            block_one
+                .iter()
+                .zip(block_three.iter())
+                .map(|(x, y)| x ^ y)
+                .collect()
+        }
+    };
+
+    let actual_key = cbc_encrypter.key.to_vec();
+    assert_eq!(decrypted_key, actual_key);
 }
 
 pub fn challenge_twenty_eight() {

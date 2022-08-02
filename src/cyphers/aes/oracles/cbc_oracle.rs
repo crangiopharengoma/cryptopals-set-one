@@ -3,11 +3,11 @@ use crate::cyphers::aes::cbc;
 use crate::encoding::Digest;
 
 pub struct CBCOracle {
-    key: [u8; 16],
+    pub key: [u8; 16],
     iv: [u8; 16],
 }
 
-pub struct EncryptionResult {
+pub struct EncryptedMessage {
     pub cipher_text: Vec<u8>,
     pub iv: [u8; 16],
 }
@@ -25,7 +25,7 @@ impl CBCOracle {
         Self::default()
     }
 
-    pub fn encrypt<T: Digest>(&self, message: &T) -> EncryptionResult {
+    fn build_message<T: Digest>(&self, message: &T) -> Vec<u8> {
         let prefix = "comment1=cooking%20MCs;userdata=".as_bytes();
         let suffix = ";comment2=%20like%20a%20pound%20of%20bacon".as_bytes();
 
@@ -33,12 +33,46 @@ impl CBCOracle {
             String::from_utf8(message.bytes().to_vec()).expect("message is not valid utf8");
         let message = message.replace('=', "\"=\"").replace(';', "\";\"");
 
-        let message = [prefix, message.as_bytes(), suffix].concat();
+        [prefix, message.as_bytes(), suffix].concat()
+    }
 
-        EncryptionResult {
+    pub fn encrypt_key_is_iv<T: Digest>(&self, message: &T) -> EncryptedMessage {
+        EncryptedMessage {
+            cipher_text: cbc::encrypt(message.bytes(), &self.key, &self.key),
+            iv: [0; 16],
+        }
+    }
+
+    /// This is weird unidiomatic rust to fulfill the criteria of the application
+    ///
+    /// This will return Ok(decrypted_message) if the message decrypts AND is valid ascii (byte values < 128)
+    /// This will return Err(decrypted_message) if the message decrypts AND is not valid ascii (at least one byte is > 127)
+    pub fn decrypt_and_validate(&self, message: &EncryptedMessage) -> Result<(), Vec<u8>> {
+        let plain_text = cbc::decrypt(&message.cipher_text, &self.key, &self.key);
+
+        if self.is_valid_ascii(&plain_text) {
+            Ok(())
+        } else {
+            Err(plain_text)
+        }
+    }
+
+    pub fn encrypt<T: Digest>(&self, message: &T) -> EncryptedMessage {
+        let message = self.build_message(message);
+
+        EncryptedMessage {
             cipher_text: cbc::encrypt(&message, &self.key, &self.iv),
             iv: self.iv,
         }
+    }
+
+    fn is_valid_ascii(&self, text: &[u8]) -> bool {
+        for i in text {
+            if *i > 128 {
+                return false;
+            }
+        }
+        true
     }
 
     pub fn is_admin(&self, cipher_text: &[u8]) -> bool {

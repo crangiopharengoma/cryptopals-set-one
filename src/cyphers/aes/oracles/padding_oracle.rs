@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use rand::Rng;
 
-use crate::cyphers::aes::oracles::cbc_oracle::EncryptionResult;
+use crate::cyphers::aes::oracles::cbc_oracle::EncryptedMessage;
 use crate::cyphers::aes::{self, cbc};
 use crate::cyphers::padding::pkcs7;
 use crate::encoding::base64::Base64;
@@ -27,9 +27,9 @@ fn calculate_padding_iv(block_length: usize, flipped_block: &mut [u8; 16], i: us
 }
 
 pub trait PaddingOracle {
-    fn is_valid_padding(&self, message: &EncryptionResult) -> bool;
+    fn is_valid_padding(&self, message: &EncryptedMessage) -> bool;
 
-    fn decrypt(&self, encrypted: &EncryptionResult) -> Vec<u8> {
+    fn decrypt(&self, encrypted: &EncryptedMessage) -> Vec<u8> {
         let cipher_text = encrypted.cipher_text.clone();
         let mut last_block = encrypted.iv.to_vec();
         let block_length = last_block.len();
@@ -63,7 +63,7 @@ pub trait PaddingOracle {
     ) -> u8 {
         for i in 0..=255 {
             *iv.get_mut(index).unwrap() = i;
-            let trial_message = EncryptionResult {
+            let trial_message = EncryptedMessage {
                 cipher_text: cipher_text.to_vec(),
                 iv: *iv,
             };
@@ -72,7 +72,7 @@ pub trait PaddingOracle {
                     return i ^ (block_length - index) as u8;
                 } else {
                     *iv.get_mut(index - 1).unwrap() = 1;
-                    let trial_message = EncryptionResult {
+                    let trial_message = EncryptedMessage {
                         cipher_text: cipher_text.to_vec(),
                         iv: *iv,
                     };
@@ -94,7 +94,7 @@ pub struct SamplePaddingOracle {
 }
 
 impl PaddingOracle for SamplePaddingOracle {
-    fn is_valid_padding(&self, message: &EncryptionResult) -> bool {
+    fn is_valid_padding(&self, message: &EncryptedMessage) -> bool {
         let message = cbc::decrypt(&message.cipher_text, &self.key, &message.iv);
         let unpadded = pkcs7::try_unpad(&message, self.key.len());
         unpadded.is_ok()
@@ -113,7 +113,7 @@ impl SamplePaddingOracle {
         Self::default()
     }
 
-    pub fn encrypt_rand(&self) -> EncryptionResult {
+    pub fn encrypt_rand(&self) -> EncryptedMessage {
         let strings = vec![
             "MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=",
             "MDAwMDAxV2l0aCB0aGUgYmFzcyBraWNrZWQgaW4gYW5kIHRoZSBWZWdhJ3MgYXJlIHB1bXBpbic=",
@@ -133,7 +133,7 @@ impl SamplePaddingOracle {
         let decoded = Base64::from_str(selection).unwrap();
         let iv = aes::generate_16_bit_key();
 
-        EncryptionResult {
+        EncryptedMessage {
             cipher_text: cbc::encrypt(decoded.bytes(), &self.key, &iv),
             iv,
         }
