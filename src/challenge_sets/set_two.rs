@@ -186,7 +186,7 @@ fn challenge_sixteen() {
     let oracle = CBCOracle::new();
     let attack_text = "this comment is exact:admin?true".as_bytes().to_vec();
 
-    let mut cipher_text = oracle.encrypt(&attack_text).cipher_text;
+    let mut cipher_text = oracle.encrypt_with_message(&attack_text).cipher_text;
 
     let semi_colon_mask = 0b_01;
     let equal_sign_mask = 0b_10;

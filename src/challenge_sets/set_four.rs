@@ -5,6 +5,7 @@ use cryptopals::cyphers::aes::ctr::CTRSampleEncryptions;
 use cryptopals::cyphers::aes::oracles::cbc_oracle::CBCOracle;
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
+use cryptopals::mac::sha_1;
 
 pub fn run() {
     print!("Starting Challenge Twenty-Five... ");
@@ -27,15 +28,15 @@ pub fn run() {
     challenge_twenty_nine();
     println!("Success!");
 
-    println!("Starting Challenge Thirty... ");
+    print!("Starting Challenge Thirty... ");
     challenge_thirty();
     println!("Success!");
 
-    println!("Starting Challenge Thirty-One... ");
+    print!("Starting Challenge Thirty-One... ");
     challenge_thirty_one();
     println!("Success!");
 
-    println!("Starting Challenge Twenty-Two... ");
+    print!("Starting Challenge Twenty-Two... ");
     challenge_thirty_two();
     println!("Success!");
 }
@@ -131,11 +132,55 @@ pub fn challenge_twenty_seven() {
 }
 
 pub fn challenge_twenty_eight() {
-    assert!(false);
+    let encrypter = CBCOracle::new();
+    let test_message = "this is a test";
+    let mac = sha_1::generate_mac(&encrypter.key, test_message.as_bytes());
+
+    let mut encrypted_message = encrypter.encrypt(test_message.as_bytes());
+    let (block_one, _) = encrypted_message.cipher_text.split_at(16);
+
+    // strictly this should (probably) fail due invalid padding (since we don't know block_one ends with valid padding)
+    // the cbc_oracle here doesn't check for valid padding (or strip it) because the padding_oracle::PaddingOracle demonstrates this
+    let altered_text = [block_one, [0; 16].as_slice(), block_one].concat();
+    encrypted_message.cipher_text = altered_text;
+
+    let decrypted = encrypter.decrypt(&encrypted_message);
+
+    // if this is implemented correctly, this should return false;
+    assert!(!sha_1::validate_mac(&encrypter.key, &decrypted, mac));
+    println!("Tampered MAC detected!");
 }
 
 pub fn challenge_twenty_nine() {
-    assert!(false);
+    let encrypter = CTRSampleEncryptions::new();
+    let test_message =
+        "comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon";
+    let mac = sha_1::generate_mac(&encrypter.key, test_message.as_bytes());
+    let encrypted_message = encrypter.encrypt(&test_message.as_bytes());
+
+    // calculate the potential length (in bits) of the final message
+    // since aes has three different key length specs, we'll try once with each
+    let potential_lengths = [
+        encrypted_message.cipher_text.len() + 16,
+        encrypted_message.cipher_text.len() + 24,
+        encrypted_message.cipher_text.len() + 32,
+    ];
+
+    let potential_macs: Vec<(Vec<u8>, [u8; 20])> = potential_lengths
+        .into_iter()
+        .map(|len| sha_1::forge_mac(len as u64, ";admin=true".as_bytes(), mac))
+        .collect();
+
+    for (appended_message, forged_mac) in potential_macs.into_iter() {
+        let full_message = [test_message.as_bytes(), &appended_message].concat();
+        if sha_1::validate_mac(&encrypter.key, &full_message, forged_mac) {
+            println!("Forged mac validated!");
+            return;
+        }
+    }
+
+    // returns early after mac successfully forged
+    assert!(false, "Failed to forged mac");
 }
 
 pub fn challenge_thirty() {

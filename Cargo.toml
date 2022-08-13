@@ -19,3 +19,4 @@ rand = "0.8.3"
 crossterm = { version = "0.23", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 tui = { version = "0.18", default-features = false, features = ['crossterm', 'serde'] }
+sha1_smol = "1.0.0"

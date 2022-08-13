@@ -36,7 +36,7 @@ pub fn decrypt(cipher_text: &EncryptedMessage, key: &[u8]) -> Vec<u8> {
 }
 
 pub struct CTRSampleEncryptions {
-    key: Vec<u8>,
+    pub key: Vec<u8>,
 }
 
 impl Default for CTRSampleEncryptions {

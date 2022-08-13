@@ -43,6 +43,17 @@ impl CBCOracle {
         }
     }
 
+    pub fn decrypt(&self, message: &EncryptedMessage) -> Vec<u8> {
+        cbc::decrypt(&message.cipher_text, &self.key, &self.key)
+    }
+
+    pub fn encrypt(&self, plain_text: &[u8]) -> EncryptedMessage {
+        EncryptedMessage {
+            cipher_text: cbc::encrypt(plain_text, &self.key, &self.iv),
+            iv: self.iv,
+        }
+    }
+
     /// This is weird unidiomatic rust to fulfill the criteria of the application
     ///
     /// This will return Ok(decrypted_message) if the message decrypts AND is valid ascii (byte values < 128)
@@ -57,7 +68,7 @@ impl CBCOracle {
         }
     }
 
-    pub fn encrypt<T: Digest>(&self, message: &T) -> EncryptedMessage {
+    pub fn encrypt_with_message<T: Digest>(&self, message: &T) -> EncryptedMessage {
         let message = self.build_message(message);
 
         EncryptedMessage {
@@ -96,7 +107,7 @@ mod tests {
     #[test]
     fn encrypt_correctly_sanitises_text() {
         let oracle = CBCOracle::new();
-        let encrypted = oracle.encrypt(&";admin=true;".as_bytes().to_vec());
+        let encrypted = oracle.encrypt_with_message(&";admin=true;".as_bytes().to_vec());
 
         let is_admin = oracle.is_admin(&encrypted.cipher_text);
         assert!(!is_admin);
@@ -114,7 +125,7 @@ mod tests {
     #[test]
     fn cipher_text_does_not_contain_admin() {
         let oracle = CBCOracle::new();
-        let encrypted = oracle.encrypt(&"this is a test".as_bytes().to_vec());
+        let encrypted = oracle.encrypt_with_message(&"this is a test".as_bytes().to_vec());
 
         let is_admin = oracle.is_admin(&encrypted.cipher_text);
         assert!(!is_admin);
