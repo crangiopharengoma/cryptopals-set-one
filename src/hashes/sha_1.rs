@@ -661,7 +661,7 @@ impl<'de> serde::de::Deserialize<'de> for Digest {
 mod tests {
     use rand::{Rng, RngCore};
 
-    use crate::hashes::sha_1::{Digest, Sha1};
+    use crate::hashes::sha_1::Sha1;
 
     #[test]
     fn test_simple() {

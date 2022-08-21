@@ -5,7 +5,8 @@ use cryptopals::cyphers::aes::ctr::CTRSampleEncryptions;
 use cryptopals::cyphers::aes::oracles::cbc_oracle::CBCOracle;
 use cryptopals::encoding::base64::Base64;
 use cryptopals::encoding::Digest;
-use cryptopals::mac::sha_1;
+use cryptopals::mac::md4::generate_mac;
+use cryptopals::mac::{md4, sha_1};
 
 pub fn run() {
     print!("Starting Challenge Twenty-Five... ");
@@ -174,17 +175,45 @@ pub fn challenge_twenty_nine() {
     for (appended_message, forged_mac) in potential_macs.into_iter() {
         let full_message = [test_message.as_bytes(), &appended_message].concat();
         if sha_1::validate_mac(&encrypter.key, &full_message, forged_mac) {
-            println!("Forged mac validated!");
+            println!("SHA1 Forged mac validated!");
             return;
         }
     }
 
     // returns early after mac successfully forged
-    assert!(false, "Failed to forged mac");
+    assert!(false, "Failed to forge SHA1 mac");
 }
 
 pub fn challenge_thirty() {
-    assert!(false);
+    let encrypter = CTRSampleEncryptions::new();
+    let test_message =
+        "comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon";
+    let mac = md4::generate_mac(&encrypter.key, test_message.as_bytes());
+    let encrypted_message = encrypter.encrypt(&test_message.as_bytes());
+
+    // calculate the potential length (in bits) of the final message
+    // since aes has three different key length specs, we'll try once with each
+    let potential_lengths = [
+        encrypted_message.cipher_text.len() + 16,
+        encrypted_message.cipher_text.len() + 24,
+        encrypted_message.cipher_text.len() + 32,
+    ];
+
+    let potential_macs: Vec<(Vec<u8>, [u8; 16])> = potential_lengths
+        .into_iter()
+        .map(|len| md4::forge_mac(len as u64, ";admin=true".as_bytes(), mac))
+        .collect();
+
+    for (appended_message, forged_mac) in potential_macs.into_iter() {
+        let full_message = [test_message.as_bytes(), &appended_message].concat();
+        if md4::validate_mac(&encrypter.key, &full_message, forged_mac) {
+            println!("MD4 Forged mac validated!");
+            return;
+        }
+    }
+
+    // returns early after mac successfully forged
+    assert!(false, "Failed to forge MD4 mac");
 }
 
 pub fn challenge_thirty_one() {
