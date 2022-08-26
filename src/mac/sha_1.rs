@@ -1,3 +1,6 @@
+use std::thread;
+use std::time::Duration;
+
 use crate::hashes::sha_1::Sha1;
 
 /// When forging a mac, ths is the new message that has been appended to the original message verified by the supplied mac
@@ -5,6 +8,7 @@ use crate::hashes::sha_1::Sha1;
 pub type AppendedMessage = Vec<u8>;
 /// Type alias for [u8; 20]; the generated mac for some message
 pub type Sha1Mac = [u8; 20];
+pub type Sha1Hmac = [u8; 20];
 
 /// Generates a mac by calculating SHA1(key || message)
 pub fn generate_mac(key: &[u8], message: &[u8]) -> Sha1Mac {
@@ -13,10 +17,55 @@ pub fn generate_mac(key: &[u8], message: &[u8]) -> Sha1Mac {
     hasher.digest().bytes()
 }
 
+/// Generate hmac using SHA1
+pub fn generate_hmac(key: &[u8], message: &[u8]) -> Sha1Hmac {
+    // since we've only used various AES128 modes so far, for now let's assume the key is always 16 bytes
+    let padded_key = [key, &[0; 48]].concat();
+
+    let outer_padded_key: Vec<u8> = padded_key
+        .iter()
+        .zip([0x5c; 64])
+        .map(|(x, y)| x ^ y)
+        .collect();
+    let inner_padded_key: Vec<u8> = padded_key
+        .iter()
+        .zip([0x36; 64])
+        .map(|(x, y)| x ^ y)
+        .collect();
+
+    let mut inner_hash = Sha1::new();
+    inner_hash.update(&[&inner_padded_key, message].concat());
+
+    let mut outer_hash = Sha1::new();
+    outer_hash.update(&[&outer_padded_key, &inner_hash.digest().bytes()[..]].concat());
+
+    outer_hash.digest().bytes()
+}
+
 /// validates that a given mac is the result of calculating SHA1(key || message)
 pub fn validate_mac(key: &[u8], message: &[u8], mac: [u8; 20]) -> bool {
     let calculated_mac = generate_mac(key, message);
     calculated_mac == mac
+}
+
+/// validates that a hmac for a given message is the correct result
+pub fn validate_hmac(key: &[u8], message: &[u8], hmac: Sha1Hmac) -> bool {
+    let calculated_hmac = generate_hmac(key, message);
+    calculated_hmac == hmac
+}
+
+/// insecurely validates that a hmac for a given message is the correct result
+/// compares artificially slowly going byte-by-byte and exiting early
+pub fn validate_hmac_insecure(key: &[u8], message: &[u8], hmac: Sha1Hmac) -> bool {
+    let calculated_hmac = generate_hmac(key, message);
+    for (x, y) in hmac.iter().zip(calculated_hmac.iter()) {
+        if y == x {
+            thread::sleep(Duration::from_millis(50));
+        } else {
+            return false;
+        }
+    }
+    true
 }
 
 /// For a given mac, key length and new_message produces a new mac, such that the validate mac function

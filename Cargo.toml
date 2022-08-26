@@ -10,6 +10,10 @@ name = "ctr-cracker"
 path = "src/bin/ctr_cracker/ctr_cracker.rs"
 
 [[bin]]
+name = "simple-server"
+path = "src/bin/simple_server/simple_server.rs"
+
+[[bin]]
 name = "cryptopals"
 path = "src/main.rs"
 
@@ -21,3 +25,5 @@ serde = { version = "1.0", features = ["derive"] }
 tui = { version = "0.18", default-features = false, features = ['crossterm', 'serde'] }
 sha1_smol = "1.0.0"
 digest = "0.10.3"
+actix-web = "4.1.0"
+reqwest = { version = "0.11.11", features = ["blocking"] }

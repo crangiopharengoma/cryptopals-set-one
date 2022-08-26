@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::ops::BitXor;
 use std::str::FromStr;
 
@@ -7,6 +8,53 @@ use crate::Error;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Hex {
     bytes: Vec<u8>,
+}
+
+fn hex_chars_from_byte(byte: u8) -> String {
+    let mut result = String::new();
+    result.push(hex_from_dec((byte >> 4) % 16));
+    result.push(hex_from_dec(byte % 16));
+    result
+}
+
+// converts a number from 0 to 15 to Hexadecimal representation
+fn hex_from_dec(number: u8) -> char {
+    match number {
+        0 => '0',
+        1 => '1',
+        2 => '2',
+        3 => '3',
+        4 => '4',
+        5 => '5',
+        6 => '6',
+        7 => '7',
+        8 => '8',
+        9 => '9',
+        10 => 'a',
+        11 => 'b',
+        12 => 'c',
+        13 => 'd',
+        14 => 'e',
+        15 => 'f',
+        _ => panic!("value larger than 16 passed to hex_from_dec"),
+    }
+}
+
+impl Display for Hex {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let hex_string: String = self.into();
+        write!(f, "{hex_string}")
+    }
+}
+
+impl From<&Hex> for String {
+    fn from(hex: &Hex) -> Self {
+        let mut result = String::new();
+        hex.bytes
+            .iter()
+            .for_each(|byte| result.push_str(&hex_chars_from_byte(*byte)));
+        result
+    }
 }
 
 impl Digest for Hex {
@@ -108,5 +156,22 @@ mod test {
         let u8_converted = Hex::parse_two_hex_ascii_bytes_to_u8(hex_input.as_bytes());
 
         assert_eq!(u8_expected, u8_converted);
+    }
+
+    #[test]
+    fn hex_to_string() {
+        let calculated_hex_str = [
+            Hex::new(&[0, 0, 0]),
+            Hex::new(&[13, 255, 111]),
+            Hex::new(&[255, 255, 255]),
+        ]
+        .map(|hex| hex.to_string());
+        let expected_hex_str = [
+            String::from("000000"),
+            String::from("0dff6f"),
+            String::from("ffffff"),
+        ];
+
+        assert_eq!(expected_hex_str, calculated_hex_str);
     }
 }

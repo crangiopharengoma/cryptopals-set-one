@@ -1,7 +1,7 @@
 //!
 //! # Usage
 //!
-//! ```rust
+//! ```ignore
 //! use md4::{Md4, Digest};
 //! use hex_literal::hex;
 //!
