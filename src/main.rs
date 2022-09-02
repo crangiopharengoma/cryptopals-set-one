@@ -1,3 +1,4 @@
+use challenge_sets::set_five;
 use challenge_sets::set_four;
 use challenge_sets::set_one;
 use challenge_sets::set_three;
@@ -18,9 +19,13 @@ fn main() {
         println!("Starting set three!");
         set_three::run();
         println!("Set three completed!");
+
+        println!("Starting set four!");
+        set_four::run();
+        println!("Set four completed!")
     }
 
-    println!("Starting set four!");
-    set_four::run();
-    println!("Set four completed!")
+    println!("Starting set five!");
+    set_five::run();
+    println!("Set five completed!")
 }
