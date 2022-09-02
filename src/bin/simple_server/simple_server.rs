@@ -8,7 +8,7 @@ use serde::Deserialize;
 
 use cryptopals::encoding::hex::Hex;
 use cryptopals::encoding::Digest;
-use cryptopals::mac::sha_1::validate_hmac_insecure;
+use cryptopals::mac::{sha_1::Sha1Hmac, Hmac};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -24,6 +24,7 @@ async fn main() -> std::io::Result<()> {
             .service(hello)
             .service(echo)
             .service(receive_secure_thing)
+            .service(slightly_better_receive_secure_thing)
             .route("/hey", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8080))?
@@ -71,11 +72,28 @@ async fn receive_secure_thing(
     message: Query<Message>,
     key: Data<[u8; 16]>, // key: Data<[u8; 20]>,
 ) -> Result<HttpResponse, Error> {
+    validate_hmac(&message, key, 50)
+}
+
+#[get("/challenge32")]
+async fn slightly_better_receive_secure_thing(
+    message: Query<Message>,
+    key: Data<[u8; 16]>, // key: Data<[u8; 20]>,
+) -> Result<HttpResponse, Error> {
+    validate_hmac(&message, key, 5)
+}
+
+fn validate_hmac(
+    message: &Query<Message>,
+    key: Data<[u8; 16]>,
+    pause: u64,
+) -> Result<HttpResponse, Error> {
     let hmac_hex = Hex::from_str(&message.signature).expect("hmac invalid hex");
-    let hmac = hmac_hex.bytes().try_into().expect("invalid hmac length");
+    let hmac: Sha1Hmac = hmac_hex.bytes().try_into().expect("invalid hmac length");
     let key = key.get_ref();
 
-    if validate_hmac_insecure(key, message.file.as_bytes(), hmac) {
+    if hmac.validate_hmac_insecure(key, message.file.as_bytes(), pause) {
+        // if validate_hmac_insecure(key, message.file.as_bytes(), hmac, pause) {
         Ok(HttpResponse::Ok().body("Valid HMAC!"))
     } else {
         Err(HmacError {

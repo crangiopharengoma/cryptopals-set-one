@@ -1,14 +1,12 @@
-use std::time::Instant;
-
 use openssl::symm;
 use openssl::symm::Cipher;
-use reqwest::StatusCode;
 
 use cryptopals::cyphers::aes::ctr::CTRSampleEncryptions;
 use cryptopals::cyphers::aes::oracles::cbc_oracle::CBCOracle;
 use cryptopals::encoding::base64::Base64;
-use cryptopals::encoding::hex::Hex;
 use cryptopals::encoding::Digest;
+use cryptopals::mac::sha_1::Sha1Hmac;
+use cryptopals::mac::timing_attack::{TimingAttack, UrlStructure};
 use cryptopals::mac::{md4, sha_1};
 
 pub fn run() {
@@ -40,7 +38,7 @@ pub fn run() {
     challenge_thirty_one();
     println!("Success!");
 
-    print!("Starting Challenge Twenty-Two... ");
+    print!("Starting Challenge Thirty-Two... ");
     challenge_thirty_two();
     println!("Success!");
 }
@@ -221,56 +219,44 @@ pub fn challenge_thirty() {
 
 pub fn challenge_thirty_one() {
     let message = "foo";
-    let mut hmac = [0; 20];
+    let url_structure = UrlStructure::new(
+        "http".to_string(),
+        "127.0.0.1".to_string(),
+        "8080".to_string(),
+        "challenge31".to_string(),
+        Some(vec![("file".to_string(), message.to_string())]),
+        "signature".to_string(),
+    );
 
-    for pos in 0..20 {
-        for hmac_component in 0..=u8::MAX {
-            if hmac_component == 0 {
-                println!("current hmac: {hmac:?}")
-            }
-            hmac[pos] = hmac_component;
-            let hmac_hex = Hex::new(&hmac[..]);
-            let url = format!(
-                "http://127.0.0.1:8080/challenge31?file={}&signature={}",
-                message,
-                hmac_hex.to_string()
-            );
-
-            // println!("querying {url}");
-            let start = Instant::now();
-            let resp = reqwest::blocking::get(url).unwrap();
-            let finish = start.elapsed();
-            // println!("{:#?}", resp);
-
-            if resp.status() == StatusCode::OK {
-                println!("HMAC for {message} is {hmac:?}");
-                return;
-            }
-
-            if resp.status() != StatusCode::INTERNAL_SERVER_ERROR {
-                println!(
-                    "Something unexpected went wrong: {} - {}",
-                    resp.status().as_str(),
-                    resp.text().unwrap_or(String::from("No text in response"))
-                );
-            }
-
-            println!(
-                "Position is {pos}, tested byte is {hmac_component} duration was {}, target was {}",
-                finish.as_millis(),
-                pos * 60 + 50
-            );
-            // since thread::sleep isn't millisecond perfect, add a couple of extra milliseconds here to avoid getting false positives
-            if finish.as_millis() > (50 + pos * 60) as u128 {
-                println!("Byte in {pos} is {hmac_component}");
-                break;
-            }
-        }
+    let mut timing_attack: TimingAttack<Sha1Hmac> = TimingAttack::new(url_structure);
+    if timing_attack.run(1, 10, 10.0) {
+        println!(
+            "Success: hmac for {message} is {:?}",
+            timing_attack.get_hmac().expect("success guaranteed")
+        );
+    } else {
+        println!("Failed to find hmac for {message}");
     }
-
-    assert!(false, "Failed to break HMAC");
 }
 
 pub fn challenge_thirty_two() {
-    assert!(false);
+    let message = "foo";
+    let url_structure = UrlStructure::new(
+        "http".to_string(),
+        "127.0.0.1".to_string(),
+        "8080".to_string(),
+        "challenge32".to_string(),
+        Some(vec![("file".to_string(), message.to_string())]),
+        "signature".to_string(),
+    );
+
+    let mut timing_attack: TimingAttack<Sha1Hmac> = TimingAttack::new(url_structure);
+    if timing_attack.run(10, 10, 0.0) {
+        println!(
+            "Success: hmac for {message} is {:?}",
+            timing_attack.get_hmac().expect("success guaranteed")
+        );
+    } else {
+        println!("Failed to find hmac for m{message}");
+    }
 }
