@@ -1,3 +1,5 @@
+use cryptopals::kex::diffie_hellman;
+
 pub fn run() {
     println!("Starting Challenge Thirty-Three ... ");
     challenge_thirty_three();
@@ -33,7 +35,8 @@ pub fn run() {
 }
 
 fn challenge_thirty_three() {
-    panic!("not yet implemented")
+    let key = diffie_hellman::generate_session_key();
+    println!("Session key: {key:?}");
 }
 
 fn challenge_thirty_four() {

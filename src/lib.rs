@@ -2,8 +2,9 @@ use std::cmp::Ordering;
 
 pub mod cyphers;
 pub mod encoding;
-pub mod mac;
 pub mod hashes;
+pub mod kex;
+pub mod mac;
 pub mod profile;
 pub mod random;
 
