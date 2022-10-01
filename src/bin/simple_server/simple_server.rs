@@ -1,14 +1,10 @@
-use std::error::Error as StdError;
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
+use actix_session::storage::CookieSessionStore;
+use actix_session::SessionMiddleware;
+use actix_web::cookie::Key;
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 
-use actix_web::web::{Data, Query};
-use actix_web::{error, get, post, web, App, Error, HttpResponse, HttpServer, Responder};
-use serde::Deserialize;
-
-use cryptopals::encoding::hex::Hex;
-use cryptopals::encoding::Digest;
-use cryptopals::mac::{sha_1::Sha1Hmac, Hmac};
+pub mod challenge_34;
+pub mod timing_attack;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -20,38 +16,25 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(SessionMiddleware::new(
+                CookieSessionStore::default(),
+                Key::generate(),
+            ))
             .app_data(web::Data::new(key))
             .service(hello)
             .service(echo)
-            .service(receive_secure_thing)
-            .service(slightly_better_receive_secure_thing)
+            .service(timing_attack::receive_secure_thing)
+            .service(timing_attack::slightly_better_receive_secure_thing)
+            .service(challenge_34::exchange_keys)
+            .service(challenge_34::exchange_message)
+            .service(challenge_34::exchange_keys_mitm)
+            .service(challenge_34::exchange_message_mitm)
             .route("/hey", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
     .await
 }
-
-#[derive(Deserialize)]
-struct Message {
-    file: String,
-    signature: String,
-}
-
-#[derive(Debug)]
-struct HmacError {
-    message: &'static str,
-}
-
-impl StdError for HmacError {}
-
-impl Display for HmacError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Error: {}", self.message)
-    }
-}
-
-impl error::ResponseError for HmacError {}
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -65,40 +48,4 @@ async fn echo(req_body: String) -> impl Responder {
 
 async fn manual_hello() -> impl Responder {
     HttpResponse::Ok().body("Hey there!")
-}
-
-#[get("/challenge31")]
-async fn receive_secure_thing(
-    message: Query<Message>,
-    key: Data<[u8; 16]>, // key: Data<[u8; 20]>,
-) -> Result<HttpResponse, Error> {
-    validate_hmac(&message, key, 50)
-}
-
-#[get("/challenge32")]
-async fn slightly_better_receive_secure_thing(
-    message: Query<Message>,
-    key: Data<[u8; 16]>, // key: Data<[u8; 20]>,
-) -> Result<HttpResponse, Error> {
-    validate_hmac(&message, key, 5)
-}
-
-fn validate_hmac(
-    message: &Query<Message>,
-    key: Data<[u8; 16]>,
-    pause: u64,
-) -> Result<HttpResponse, Error> {
-    let hmac_hex = Hex::from_str(&message.signature).expect("hmac invalid hex");
-    let hmac: Sha1Hmac = hmac_hex.bytes().try_into().expect("invalid hmac length");
-    let key = key.get_ref();
-
-    if hmac.validate_hmac_insecure(key, message.file.as_bytes(), pause) {
-        // if validate_hmac_insecure(key, message.file.as_bytes(), hmac, pause) {
-        Ok(HttpResponse::Ok().body("Valid HMAC!"))
-    } else {
-        Err(HmacError {
-            message: "Invalid message",
-        }
-        .into())
-    }
 }
